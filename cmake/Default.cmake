@@ -1,0 +1,22 @@
+cmake_minimum_required(VERSION 3.17.3)
+get_filename_component(ROOT ${CMAKE_CURRENT_SOURCE_DIR} NAME)
+set(PROJECT_NAME ${ROOT})
+project(${PROJECT_NAME})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "bin")
+include(Colors)
+message(STATUS "${Green}Processing "  ${ROOT} ${ColourReset})
+include_directories(inc)
+
+# Macro for Latex documentation
+# Get the list of all subdirs found in curdir
+# Usage: SUBDIRLIST(LIST_OF_DIR ${MY_DIR})
+MACRO(SUBDIRLIST result curdir)
+  FILE(GLOB children RELATIVE ${curdir} ${curdir}/*)
+  SET(dirlist "")
+  FOREACH(child ${children})
+    IF(IS_DIRECTORY ${curdir}/${child})
+      LIST(APPEND dirlist ${child})
+    ENDIF()
+  ENDFOREACH()
+  SET(${result} ${dirlist})
+ENDMACRO()
