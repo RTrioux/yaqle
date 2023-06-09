@@ -13,14 +13,14 @@ One can simply instantiate quaternions.
 
 ```cpp
     /** Create a quaternion **/
-    /* (double q0, double q1 , double q2,double q3) i.e (w, x, y, z) */ 
+    /* (float q0, float q1 , float q2,float q3) i.e (w, x, y, z) */ 
     Quat Q0 = Quat(1, 2, 3, 4); // 1 + 2.i + 3.j + 4.k 
 
-    /* (double arr[4]) */
-    double arr[4] = {1, 2, 3, 4};
+    /* (float arr[4]) */
+    float arr[4] = {1, 2, 3, 4};
     Quat Q1 = Quat(arr);
 
-    /* (double real, Vector3D im) */
+    /* (float real, Vector3D im) */
     Quat Q2 = Quat(1, Vector3D(2, 3, 4));
 ```
 
@@ -30,11 +30,11 @@ then the imaginary part is adjusted such that the norm is unitary. (angle = 0 =>
 
 ```cpp
     /** Create a unit quaternion describing a rotation `angle` along a given axis **/
-    /* (double angle, double x, double y, double z, bool degree = false) */
+    /* (float angle, float x, float y, float z, bool degree = false) */
     Quat Uq1 = unitQuat(M_PI_4, 1, 0, 0); // Rotation of Pi/4 rad about X axis 
     Quat Uq2 = unitQuat(45, 1, 0, 0, true); // Rotation of 45° about X axis 
 
-    /* (double real, Vector3D im, bool degree = false) */
+    /* (float real, Vector3D im, bool degree = false) */
     Quat Uq3 = unitQuat(M_PI_4, Vector3D(1, 0, 0));
     Quat Uq4 = unitQuat(45, Vector3D(1, 0, 0), true);
 ```
