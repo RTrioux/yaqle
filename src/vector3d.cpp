@@ -1,12 +1,10 @@
 #include <math.h>
 #include "vector3d.hpp"
 
-using namespace std;
-
 namespace yaql
 {
 
-    Vector3D::Vector3D(array<float, 3> arr)
+    Vector3D::Vector3D(etl::array<float, 3> arr)
     {
         for (size_t i = 0; i < 3; i++)
         {
@@ -118,7 +116,7 @@ namespace yaql
         return !(this->isEqual(vec));
     }
 
-    ostream &operator<<(ostream &out, Vector3D const &vec)
+    std::ostream &operator<<(std::ostream &out, Vector3D const &vec)
     {
         out << "(";
         for (size_t i = 0; i < 3; i++)
@@ -178,16 +176,16 @@ namespace yaql
 
     void Vector3D::print() const
     {
-        cout << "(";
+        std::cout << "(";
         for (size_t i = 0; i < 3; i++)
         {
-            cout << m_arr[i];
+            std::cout << m_arr[i];
             if (i < 2)
             {
-                cout << ",";
+                std::cout << ",";
             }
         }
-        cout << ")" << endl;
+        std::cout << ")" << std::endl;
     }
 
 }

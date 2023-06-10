@@ -1,13 +1,13 @@
 #ifndef VECTOR3D_HPP
 #define VECTOR3D_HPP
 #include <iostream>
-#include <array>
+#include <etl/array.h>
 namespace yaql
 {
     class Vector3D
     {
     public:
-        Vector3D(std::array<float, 3> arr);
+        Vector3D(etl::array<float, 3> arr);
         Vector3D(float x = 0, float y = 0, float z = 0);
         Vector3D(float arr[3]);
         virtual ~Vector3D() {}
@@ -58,7 +58,7 @@ namespace yaql
     template <typename T>
     Vector3D operator/(Vector3D const &vect, T const &scalar)
     {
-        if (std::is_scalar<T>::value)
+        if (etl::is_arithmetic<T>::value)
         {
             if (scalar == 0)
             {
@@ -80,7 +80,7 @@ namespace yaql
     template <typename T>
     Vector3D operator*(T const &scalar, Vector3D const &vect)
     {
-        if (std::is_scalar<T>::value)
+        if (etl::is_arithmetic<T>::value)
         {
             float arr[3];
             for (size_t i = 0; i < 3; i++)

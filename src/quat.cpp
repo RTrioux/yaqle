@@ -7,6 +7,8 @@
 
 using namespace etl;
 
+// TODO: Find a better way to handle errors
+
 namespace yaql
 {
 
@@ -274,7 +276,7 @@ namespace yaql
             }
             else
             {
-                return Vector3D(0, 0, 0); // TODO: Find a better way to handle errors
+                throw std::domain_error("Q[0] must range in [-1,1]");
             }
         }
 
@@ -356,7 +358,7 @@ namespace yaql
             euler[2] = atan2(h, -g);
             break;
         default:
-            return Vector3D(0, 0, 0);
+            throw std::invalid_argument("Not a correct sequence");
             break;
         }
 
@@ -390,7 +392,7 @@ namespace yaql
                 }
                 euler[2] = 0;
             }
-            // std::cout << "WARNING: Gimbal locked: Third angle has been set to 0" << std::endl;
+            std::cout << "WARNING: Gimbal locked: Third angle has been set to 0" << std::endl;
         }
 
         if (isExtrinsic)
@@ -415,16 +417,16 @@ namespace yaql
 #ifdef YAQLE_USE_COUT
     void Quat::print() const
     {
-        cout << "(";
+        std::cout << "(";
         for (size_t i = 0; i < 4; i++)
         {
-            cout << m_arr[i];
+            std::cout << m_arr[i];
             if (i < 3)
             {
-                cout << ",";
+                std::cout << ",";
             }
         }
-        cout << ")" << endl;
+        std::cout << ")" << std::endl;
     }
 #endif
 
@@ -467,7 +469,7 @@ namespace yaql
         return unitQuat(angle, Vector3D(x, y, z));
     }
 
-    Quat fromEuler(std::array<float, 3> euler, Quat::Sequence seq, bool degree, bool isExtrinsic)
+    Quat fromEuler(etl::array<float, 3> euler, Quat::Sequence seq, bool degree, bool isExtrinsic)
     {
         /**
          * https://handwiki.org/wiki/Rotation_formalisms_in_three_dimensions
@@ -527,19 +529,19 @@ namespace yaql
 
     Quat fromEuler(float euler[3], Quat::Sequence seq, bool degree, bool isExtrinsic)
     {
-        std::array<float, 3> arr = {euler[0], euler[1], euler[2]};
+        etl::array<float, 3> arr = {euler[0], euler[1], euler[2]};
         return fromEuler(arr, seq, degree, isExtrinsic);
     }
 
     Quat fromEuler(float alpha, float beta, float gamma, Quat::Sequence seq, bool degree, bool isExtrinsic)
     {
-        std::array<float, 3> arr = {alpha, beta, gamma};
+        etl::array<float, 3> arr = {alpha, beta, gamma};
         return fromEuler(arr, seq, degree, isExtrinsic);
     }
 
     Quat fromEuler(Vector3D euler, Quat::Sequence seq, bool degree, bool isExtrinsic)
     {
-        std::array<float, 3> arr = {euler[0], euler[1], euler[2]};
+        etl::array<float, 3> arr = {euler[0], euler[1], euler[2]};
         return fromEuler(arr, seq, degree, isExtrinsic);
     }
 

@@ -5,7 +5,9 @@
 #include <cmath>
 #include "vector3d.hpp"
 
-#ifdef YAQL_USE_COUT
+#define YAQLE_USE_COUT
+
+#ifdef YAQLE_USE_COUT
 #include <ostream>
 #endif
 
@@ -129,7 +131,7 @@ namespace yaql
     Quat unitQuat(float angle, Vector3D im, bool degree = false);
     Quat unitQuat(float angle, float x, float y, float z, bool degree = false);
 
-    Quat fromEuler(std::array<float, 3> euler, Quat::Sequence seq = Quat::ZYX, bool degree = false, bool isExtrinsic = false);
+    Quat fromEuler(etl::array<float, 3> euler, Quat::Sequence seq = Quat::ZYX, bool degree = false, bool isExtrinsic = false);
     Quat fromEuler(float euler[3], Quat::Sequence seq = Quat::ZYX, bool degree = false, bool isExtrinsic = false);
     Quat fromEuler(float alpha, float beta, float gamma, Quat::Sequence seq = Quat::ZYX, bool degree = false, bool isExtrinsic = false);
     Quat fromEuler(Vector3D euler, Quat::Sequence seq = Quat::ZYX, bool degree = false, bool isExtrinsic = false);
@@ -137,8 +139,7 @@ namespace yaql
     template <typename T>
     Quat operator/(Quat const &q, T const &scalar)
     {
-
-        if (std::is_arithmetic<T>::value)
+        if (etl::is_arithmetic<T>::value)
         {
             float arr[4];
             for (size_t i = 0; i < 4; i++)
@@ -149,8 +150,7 @@ namespace yaql
         }
         else
         {
-            // throw std::logic_error("Not a scalar");
-            return Quat(0, 0, 0, 0);
+            throw std::logic_error("Not a scalar");
         }
     }
 
@@ -158,7 +158,7 @@ namespace yaql
     Quat operator/(T const &scalar, Quat const &q)
     {
 
-        if (std::is_arithmetic<T>::value)
+        if (etl::is_arithmetic<T>::value)
         {
             float arr[4];
             Quat q_inv = q.inverse();
@@ -177,7 +177,7 @@ namespace yaql
     template <typename T>
     Quat operator*(Quat const &q, T const &scalar)
     {
-        if (std::is_arithmetic<T>::value)
+        if (etl::is_arithmetic<T>::value)
         {
             float arr[4];
             for (size_t i = 0; i < 4; i++)
