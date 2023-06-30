@@ -6,12 +6,14 @@
 #include "vector3d.hpp"
 
 #define YAQLE_USE_COUT
+#include <etl/string.h>
+#include <fstream>
 
 #ifdef YAQLE_USE_COUT
 #include <ostream>
 #endif
 
-namespace yaql
+namespace yaqle
 {
 
     class Quat
@@ -95,7 +97,10 @@ namespace yaql
         Vector3D toEuler(Sequence seq = ZYX, bool degree = false, bool isExtrinsic = false) const; // YPR as default sequence
 
         /** Display **/
+#ifdef YAQLE_USE_COUT
         void print() const;
+        void writeToFile(std::ofstream &) const;
+#endif
 
     private:
         float m_arr[4];
@@ -124,6 +129,16 @@ namespace yaql
         return q.toEuler(seq, degree, isExtrinsic);
     }
 
+    inline float innerProd(Quat const &q1, Quat const &q2)
+    {
+        float sum = 0.0f;
+        for (size_t i = 0; i < 4; i++)
+        {
+            sum += q1[i] * q2[i];
+        }
+        return sum;
+    }
+
     /** Tools **/
     Quat getRotation(Vector3D const &v1, Vector3D const &v2);
 
@@ -135,6 +150,9 @@ namespace yaql
     Quat fromEuler(float euler[3], Quat::Sequence seq = Quat::ZYX, bool degree = false, bool isExtrinsic = false);
     Quat fromEuler(float alpha, float beta, float gamma, Quat::Sequence seq = Quat::ZYX, bool degree = false, bool isExtrinsic = false);
     Quat fromEuler(Vector3D euler, Quat::Sequence seq = Quat::ZYX, bool degree = false, bool isExtrinsic = false);
+
+    Quat slerp(const Quat &q1, const Quat &q2, float t);
+    Quat lerp(const Quat &q1, const Quat &q2, float t);
 
     template <typename T>
     Quat operator/(Quat const &q, T const &scalar)

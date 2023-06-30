@@ -9,7 +9,7 @@ using namespace etl;
 
 // TODO: Find a better way to handle errors
 
-namespace yaql
+namespace yaqle
 {
 
     Quat::Quat(float q0, float q1, float q2, float q3)
@@ -218,7 +218,7 @@ namespace yaql
 
     float Quat::norm() const
     {
-        return sqrt(norm2());
+        return sqrtf(norm2());
     }
 
     Quat Quat::normalize() const
@@ -230,7 +230,7 @@ namespace yaql
 
     float Quat::getAngle() const
     {
-        return 2 * acos(m_arr[0]);
+        return 2 * acosf(m_arr[0]);
     }
 
     Vector3D Quat::rotate(Vector3D const &vec) const
@@ -272,7 +272,7 @@ namespace yaql
         {
             if (-1 <= Q[0] && Q[0] <= 1)
             {
-                Q = unitQuat(2 * acos(Q[0]), Q.im());
+                Q = unitQuat(2 * acosf(Q[0]), Q.im());
             }
             else
             {
@@ -298,64 +298,64 @@ namespace yaql
         switch (seq)
         {
         case XYX:
-            euler[0] = atan2(d, -g);
-            euler[1] = acos(a);
-            euler[2] = atan2(b, c);
+            euler[0] = atan2f(d, -g);
+            euler[1] = acosf(a);
+            euler[2] = atan2f(b, c);
             break;
         case XYZ:
-            euler[0] = atan2(-f, i);
-            euler[1] = asin(c);
-            euler[2] = atan2(-b, a);
+            euler[0] = atan2f(-f, i);
+            euler[1] = asinf(c);
+            euler[2] = atan2f(-b, a);
             break;
         case XZX:
-            euler[0] = atan2(g, d);
-            euler[1] = acos(a);
-            euler[2] = atan2(c, -b);
+            euler[0] = atan2f(g, d);
+            euler[1] = acosf(a);
+            euler[2] = atan2f(c, -b);
             break;
         case XZY:
-            euler[0] = atan2(h, e);
-            euler[1] = -asin(b);
-            euler[2] = atan2(c, a);
+            euler[0] = atan2f(h, e);
+            euler[1] = -asinf(b);
+            euler[2] = atan2f(c, a);
             break;
         case YXY:
-            euler[0] = atan2(b, h);
-            euler[1] = acos(e);
-            euler[2] = atan2(d, -f);
+            euler[0] = atan2f(b, h);
+            euler[1] = acosf(e);
+            euler[2] = atan2f(d, -f);
             break;
         case YXZ:
-            euler[0] = atan2(c, i);
-            euler[1] = -asin(f);
-            euler[2] = atan2(d, e);
+            euler[0] = atan2f(c, i);
+            euler[1] = -asinf(f);
+            euler[2] = atan2f(d, e);
             break;
         case YZX:
-            euler[0] = atan2(-g, a);
-            euler[1] = asin(d);
-            euler[2] = atan2(-f, e);
+            euler[0] = atan2f(-g, a);
+            euler[1] = asinf(d);
+            euler[2] = atan2f(-f, e);
             break;
         case YZY:
-            euler[0] = atan2(h, -b);
-            euler[1] = acos(e);
-            euler[2] = atan2(f, d);
+            euler[0] = atan2f(h, -b);
+            euler[1] = acosf(e);
+            euler[2] = atan2f(f, d);
             break;
         case ZXY:
-            euler[0] = atan2(-b, e);
-            euler[1] = asin(h);
-            euler[2] = atan2(-g, i);
+            euler[0] = atan2f(-b, e);
+            euler[1] = asinf(h);
+            euler[2] = atan2f(-g, i);
             break;
         case ZXZ:
-            euler[0] = atan2(c, -f);
-            euler[1] = acos(i);
-            euler[2] = atan2(g, h);
+            euler[0] = atan2f(c, -f);
+            euler[1] = acosf(i);
+            euler[2] = atan2f(g, h);
             break;
         case ZYX:
-            euler[0] = atan2(d, a);
-            euler[1] = -asin(g);
-            euler[2] = atan2(h, i);
+            euler[0] = atan2f(d, a);
+            euler[1] = -asinf(g);
+            euler[2] = atan2f(h, i);
             break;
         case ZYZ:
-            euler[0] = atan2(f, c);
-            euler[1] = acos(i);
-            euler[2] = atan2(h, -g);
+            euler[0] = atan2f(f, c);
+            euler[1] = acosf(i);
+            euler[2] = atan2f(h, -g);
             break;
         default:
             throw std::invalid_argument("Not a correct sequence");
@@ -372,11 +372,11 @@ namespace yaql
             {
                 if (strSeq[0] != 'Y')
                 {
-                    euler[2] = acos(e);
+                    euler[2] = acosf(e);
                 }
                 else
                 {
-                    euler[2] = acos(a);
+                    euler[2] = acosf(a);
                 }
                 euler[0] = 0;
             }
@@ -384,11 +384,11 @@ namespace yaql
             {
                 if (strSeq[0] != 'Y')
                 {
-                    euler[0] = acos(e);
+                    euler[0] = acosf(e);
                 }
                 else
                 {
-                    euler[0] = acos(a);
+                    euler[0] = acosf(a);
                 }
                 euler[2] = 0;
             }
@@ -428,13 +428,19 @@ namespace yaql
         }
         std::cout << ")" << std::endl;
     }
+
+    void Quat::writeToFile(std::ofstream &file) const
+    {
+        file << m_arr[0] << ',' << m_arr[1] << ',' << m_arr[2] << ',' << m_arr[3] << std::endl;
+    }
+
 #endif
 
     /** Tools **/
 
     Quat getRotation(Vector3D const &v1, Vector3D const &v2)
     {
-        float theta = acos(innerProd(v1, v2) / (norm(v1) * norm(v2)));
+        float theta = acosf(innerProd(v1, v2) / (norm(v1) * norm(v2)));
         Vector3D im = crossProd(v1, v2);
         return unitQuat(theta, im);
     }
@@ -450,22 +456,23 @@ namespace yaql
         {
             if (degree)
             {
-                angle *= 180.0 / M_PI;
+                angle *= M_PI / 180.0f;
             }
 
-            float q0 = cos(angle / 2);
+            float q0 = cosf(angle / 2);
             // Change direction in case of negative angle
             if (angle < 0)
             {
                 im = -im;
             }
-            float lambda = sqrt((1 - q0 * q0) / im.norm2());
+            float lambda = sqrtf((1 - q0 * q0) / im.norm2());
             return Quat(q0, lambda * im);
         }
     }
 
     Quat unitQuat(float angle, float x, float y, float z, bool degree)
     {
+        angle = degree == true ? angle * M_PI / 180.0f : angle;
         return unitQuat(angle, Vector3D(x, y, z));
     }
 
@@ -501,13 +508,13 @@ namespace yaql
             switch (c)
             {
             case 'X':
-                Q[i] = Quat(cos(euler[i] / 2), sin(euler[i] / 2), 0, 0);
+                Q[i] = Quat(cosf(euler[i] / 2), sinf(euler[i] / 2), 0, 0);
                 break;
             case 'Y':
-                Q[i] = Quat(cos(euler[i] / 2), 0, sin(euler[i] / 2), 0);
+                Q[i] = Quat(cosf(euler[i] / 2), 0, sinf(euler[i] / 2), 0);
                 break;
             case 'Z':
-                Q[i] = Quat(cos(euler[i] / 2), 0, 0, sin(euler[i] / 2));
+                Q[i] = Quat(cosf(euler[i] / 2), 0, 0, sinf(euler[i] / 2));
                 break;
             }
             /*
@@ -543,6 +550,46 @@ namespace yaql
     {
         etl::array<float, 3> arr = {euler[0], euler[1], euler[2]};
         return fromEuler(arr, seq, degree, isExtrinsic);
+    }
+
+    Quat slerp(const Quat &q1, const Quat &q2, float t)
+    {
+        // Calculate the dot product of the two quaternions
+        // float dot = q1[0] * q2[0] + q1[1] * q2[1] + q1[2] * q2[2] + q1[3] * q2[3];
+        float dot = innerProd(q1, q2);
+
+        // Ensure the dot product is within [-1, 1] to avoid numerical issues
+        // dot = fmaxf(fminf(dot, 1.0f), -1.0f);
+
+        // Determine the direction of the interpolation
+        float direction = (dot < 0) ? -1.0f : 1.0f;
+
+        // Calculate the angle between the quaternions
+        float angle = acosf(direction * dot);
+
+        // Calculate the interpolation coefficients
+        float sinInverse = 1.0f / sinf(angle);
+        float coeff1 = sinf((1.0f - t) * angle) * sinInverse;
+        float coeff2 = sinf(t * angle) * sinInverse * direction;
+
+        // Perform the spherical linear interpolation
+        /*
+        float r[4];
+        r[0] = coeff1 * q1[0] + coeff2 * q2[0];
+        r[1] = coeff1 * q1[1] + coeff2 * q2[1];
+        r[2] = coeff1 * q1[2] + coeff2 * q2[2];
+        r[3] = coeff1 * q1[3] + coeff2 * q2[3];
+
+        return Quat(r[0], r[1], r[2], r[3]);
+        */
+        Quat q = coeff1 * q1 + coeff2 * q2;
+        return q;
+    }
+
+    Quat lerp(const Quat &q1, const Quat &q2, float t)
+    {
+        Quat q = (1 - t) * q1 + q2 * t;
+        return q.normalize();
     }
 
 }

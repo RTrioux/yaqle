@@ -1,7 +1,7 @@
 #include <math.h>
 #include "vector3d.hpp"
 
-namespace yaql
+namespace yaqle
 {
 
     Vector3D::Vector3D(etl::array<float, 3> arr)
@@ -164,7 +164,7 @@ namespace yaql
 
     float Vector3D::norm() const
     {
-        return sqrt(norm2());
+        return sqrtf(norm2());
     }
 
     float Vector3D::norm2() const

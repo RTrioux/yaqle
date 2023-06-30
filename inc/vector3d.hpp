@@ -2,7 +2,7 @@
 #define VECTOR3D_HPP
 #include <iostream>
 #include <etl/array.h>
-namespace yaql
+namespace yaqle
 {
     class Vector3D
     {
