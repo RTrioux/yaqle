@@ -1,7 +1,7 @@
+#include "dquat.hpp"
+#include "quat.hpp"
 #include <iostream>
 #include <math.h>
-#include "quat.hpp"
-#include "dquat.hpp"
 #include <string>
 
 #include <fstream> // Write to file
@@ -108,7 +108,8 @@ int main()
         // Get the equivalent rotation from vector v1 to vector v2
         Vector3D v1(0.5, 1, 100), v2(2, 1, -50);
         Q0 = getRotation(v1, v2);
-        cout << Q0 << "\t" << Q0.rotate(v1) * norm(v2) / norm(v1) << "\t" << (1 / Q0).rotate(v2) * norm(v1) / norm(v2) << endl;
+        cout << Q0 << "\t" << Q0.rotate(v1) * norm(v2) / norm(v1) << "\t" << (1 / Q0).rotate(v2) * norm(v1) / norm(v2)
+             << endl;
 
         cout << "Propriété" << endl;
         Q0 = Quat(4, 10, -7, 5);
@@ -149,8 +150,7 @@ int main()
         dq1 = DQuat(Q0, Q1);
         dq2 = DQuat(Q2, Q3);
         cout << dq1 << "\t" << dq2 << endl;
-        cout << dq1 * dq2 << endl
-             << endl;
+        cout << dq1 * dq2 << endl << endl;
 
         cout << "Normalization" << endl;
         dq1 = DQuat(Quat(-10, 4, 6, 7), Quat(4, 3, 12, -15));
@@ -163,8 +163,7 @@ int main()
 
         cout << "Norm properties |Q1.Q2| = |Q1|*|Q2|" << endl;
         cout << (dq1 * dq2).norm() << endl;
-        cout << dq1.norm() * dq2.norm() << endl
-             << endl;
+        cout << dq1.norm() * dq2.norm() << endl << endl;
     }
 
     {
