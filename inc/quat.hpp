@@ -5,7 +5,7 @@
 #include <etl/array.h>
 #include <etl/map.h>
 
-#define YAQLE_USE_COUT
+#include <etl/static_assert.h>
 #include <etl/string.h>
 #include <fstream>
 
@@ -197,55 +197,42 @@ Quat lerp(const Quat &q1, const Quat &q2, float t);
 
 template <typename T> Quat operator/(Quat const &q, T const &scalar)
 {
-    if (etl::is_arithmetic<T>::value)
+    ETL_STATIC_ASSERT(etl::is_arithmetic<T>::value, "Not a scalar");
+    // TODO: Add assertion on non null scalar
+
+    float arr[4];
+    for (size_t i = 0; i < 4; i++)
     {
-        float arr[4];
-        for (size_t i = 0; i < 4; i++)
-        {
-            arr[i] = q[i] / scalar;
-        }
-        return Quat(arr);
+        arr[i] = q[i] / scalar;
     }
-    else
-    {
-        throw std::logic_error("Not a scalar");
-    }
+    return Quat(arr);
 }
 
 template <typename T> Quat operator/(T const &scalar, Quat const &q)
 {
 
-    if (etl::is_arithmetic<T>::value)
+    ETL_STATIC_ASSERT(etl::is_arithmetic<T>::value, "Not a scalar");
+    // TODO: Add assertion on non null scalar
+
+    float arr[4];
+    Quat q_inv = q.inverse();
+    for (size_t i = 0; i < 4; i++)
     {
-        float arr[4];
-        Quat q_inv = q.inverse();
-        for (size_t i = 0; i < 4; i++)
-        {
-            arr[i] = scalar * q_inv[i];
-        }
-        return Quat(arr);
+        arr[i] = scalar * q_inv[i];
     }
-    else
-    {
-        throw std::logic_error("Not a scalar");
-    }
+    return Quat(arr);
 }
 
 template <typename T> Quat operator*(Quat const &q, T const &scalar)
 {
-    if (etl::is_arithmetic<T>::value)
+    ETL_STATIC_ASSERT(etl::is_arithmetic<T>::value, "Not a scalar");
+    // TODO: Add assertion on non null scalar
+    float arr[4];
+    for (size_t i = 0; i < 4; i++)
     {
-        float arr[4];
-        for (size_t i = 0; i < 4; i++)
-        {
-            arr[i] = scalar * q[i];
-        }
-        return Quat(arr);
+        arr[i] = scalar * q[i];
     }
-    else
-    {
-        throw std::logic_error("Not a scalar");
-    }
+    return Quat(arr);
 }
 
 template <typename T> Quat operator*(T const &scalar, Quat const &q)

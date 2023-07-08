@@ -24,10 +24,14 @@ class QuaternionTest : public ::testing::Test
         q1 = Quat(1.0, 2.0, 3.0, 4.0);
         q2 = Quat(-1.0, -2.0, -3.0, -4.0);
         q3 = Quat(2.0, 4.0, 6.0, 8.0);
+
+        uq1 = unitQuat(0, 0, 0, 1);
+        uq2 = unitQuat(M_PI, 0, 0, 1);
     }
 
     // Test quaternions
     Quat q1, q2, q3;
+    Quat uq1, uq2;
 };
 
 /* Constructors */
@@ -180,4 +184,16 @@ TEST_F(QuaternionTest, QuaternionProduct)
     Quat result = q1 * q2;
     Quat expected = Quat(28.0, -4.0, -6.0, -8.0);
     EXPECT_TRUE(compareQuat(result, expected));
+}
+
+TEST_F(QuaternionTest, QuaternionSLERP)
+{
+    for (float t = 0; t < 1; t += 0.01)
+    {
+        Quat q = slerp(uq1, uq2, t);
+        float angle_ref = M_PI * t;
+        float angle = 2.0f * acosf(q[0]);
+
+        ASSERT_NEAR(angle, angle_ref, 1e-5);
+    }
 }

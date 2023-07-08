@@ -116,6 +116,7 @@ bool Vector3D::operator!=(Vector3D const &vec) const
     return !(this->isEqual(vec));
 }
 
+#ifdef YAQLE_USE_COUT
 std::ostream &operator<<(std::ostream &out, Vector3D const &vec)
 {
     out << "(";
@@ -130,6 +131,7 @@ std::ostream &operator<<(std::ostream &out, Vector3D const &vec)
     out << ")";
     return out;
 }
+#endif
 
 /** Algebra **/
 Vector3D Vector3D::crossProd(Vector3D const &B) const
@@ -154,11 +156,13 @@ float Vector3D::innerProd(Vector3D const &B) const
 
 float Vector3D::getAngle(Vector3D const &B) const
 {
-    return acos(this->innerProd(B) / (norm() * B.norm()));
+    // TODO: Check that norm are non null
+    return acosf(this->innerProd(B) / (norm() * B.norm()));
 }
 
 Vector3D Vector3D::normalize() const
 {
+    // TODO: Check that norm are non null
     return (*this) / norm();
 }
 
@@ -174,6 +178,7 @@ float Vector3D::norm2() const
 
 /** Display **/
 
+#if YAQLE_USE_COUT
 void Vector3D::print() const
 {
     std::cout << "(";
@@ -187,5 +192,6 @@ void Vector3D::print() const
     }
     std::cout << ")" << std::endl;
 }
+#endif
 
 } // namespace yaqle

@@ -1,7 +1,12 @@
 #ifndef VECTOR3D_HPP
 #define VECTOR3D_HPP
 #include <etl/array.h>
+#include <etl/static_assert.h>
+
+#ifdef YAQLE_USE_COUT
 #include <iostream>
+#endif
+#define YAQLE_EPS (float)1e-5
 namespace yaqle
 {
 class Vector3D
@@ -28,7 +33,9 @@ class Vector3D
     bool operator==(Vector3D const &) const;
     float &operator[](size_t index);
     const float &operator[](size_t index) const;
+#ifdef YAQLE_USE_COUT
     friend std::ostream &operator<<(std::ostream &, Vector3D const &);
+#endif
 
     /** Algebra **/
     Vector3D crossProd(Vector3D const &) const;
@@ -40,8 +47,10 @@ class Vector3D
     float norm() const;
     float norm2() const;
 
-    /** Display **/
+/** Display **/
+#ifdef YAQLE_USE_COUT
     void print() const;
+#endif
 
   private:
     float m_arr[3];
@@ -83,44 +92,32 @@ inline float norm2(Vector3D const &v)
 
 template <typename T> Vector3D operator/(Vector3D const &vect, T const &scalar)
 {
-    if (etl::is_arithmetic<T>::value)
+    ETL_STATIC_ASSERT(etl::is_arithmetic<T>::value, "Not a scalar");
+    // TODO: Check that scalar is not zero
+
+    float arr[3];
+    for (size_t i = 0; i < 3; i++)
     {
-        if (scalar == 0)
-        {
-            throw std::domain_error("Divide by 0");
-        }
-        float arr[3];
-        for (size_t i = 0; i < 3; i++)
-        {
-            arr[i] = vect[i] / scalar;
-        }
-        return Vector3D(arr);
+        arr[i] = vect[i] / scalar;
     }
-    else
-    {
-        throw std::logic_error("Not a scalar");
-    }
+    return Vector3D(arr);
 }
 
 template <typename T> Vector3D operator*(T const &scalar, Vector3D const &vect)
 {
-    if (etl::is_arithmetic<T>::value)
+    ETL_STATIC_ASSERT(etl::is_arithmetic<T>::value, "Not a scalar");
+
+    float arr[3];
+    for (size_t i = 0; i < 3; i++)
     {
-        float arr[3];
-        for (size_t i = 0; i < 3; i++)
-        {
-            arr[i] = scalar * vect[i];
-        }
-        return Vector3D(arr);
+        arr[i] = scalar * vect[i];
     }
-    else
-    {
-        throw std::logic_error("Not a scalar");
-    }
+    return Vector3D(arr);
 }
 
 template <typename T> Vector3D operator*(Vector3D const &vect, T const &scalar)
 {
+    ETL_STATIC_ASSERT(etl::is_arithmetic<T>::value, "Not a scalar");
     return scalar * vect;
 }
 

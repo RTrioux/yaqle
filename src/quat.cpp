@@ -68,7 +68,7 @@ bool Quat::isNull() const
 {
     for (size_t i = 0; i < 4; i++)
     {
-        if (m_arr[i] != 0)
+        if (fabs(m_arr[i]) > YAQLE_EPS)
         {
             return false;
         }
@@ -181,6 +181,7 @@ std::ostream &operator<<(std::ostream &out, Quat const &q)
 
 Quat Quat::inverse() const
 {
+    // TODO: Check that norm2 is not null
     return 1.0 / norm2() * conj();
 }
 
@@ -223,6 +224,7 @@ float Quat::norm() const
 
 Quat Quat::normalize() const
 {
+    // TODO: Check norm is not null
     return (*this) / norm();
 }
 
@@ -230,6 +232,7 @@ Quat Quat::normalize() const
 
 float Quat::getAngle() const
 {
+    // Check that q0 domain [-1, 1]
     return 2 * acosf(m_arr[0]);
 }
 
@@ -269,18 +272,7 @@ Vector3D Quat::toEuler(Sequence seq, bool degree, bool isExtrinsic) const
     string<4> strSeq = seq2str[seq];
 
     Quat Q = *this;
-    // Check if the quaternion is a valid rotation
-    if (norm2() > 1)
-    {
-        if (-1 <= Q[0] && Q[0] <= 1)
-        {
-            Q = unitQuat(2 * acosf(Q[0]), Q.im());
-        }
-        else
-        {
-            throw std::domain_error("Q[0] must range in [-1,1]");
-        }
-    }
+    // TODO: Check if the rotation is valid
 
     float q0 = Q[0], q1 = Q[1], q2 = Q[2], q3 = Q[3];
     float a = 1 - 2 * (q2 * q2 + q3 * q3), b = 2 * (q1 * q2 - q3 * q0), c = 2 * (q1 * q3 + q2 * q0),
@@ -351,14 +343,13 @@ Vector3D Quat::toEuler(Sequence seq, bool degree, bool isExtrinsic) const
         euler[2] = atan2f(h, -g);
         break;
     default:
-        throw std::invalid_argument("Not a correct sequence");
+        // TODO: Check sequence order
         break;
     }
 
     /* Gimbal lock check */
-    float eps = 1e-7;
 
-    if (abs(euler[1]) < eps || abs(euler[1] - M_PI) < eps)
+    if (abs(euler[1]) < YAQLE_EPS || abs(euler[1] - M_PI) < YAQLE_EPS)
     {
         // Ensure that the third angle is 0 after swapping 0 & 2
         if (isExtrinsic)
@@ -385,7 +376,9 @@ Vector3D Quat::toEuler(Sequence seq, bool degree, bool isExtrinsic) const
             }
             euler[2] = 0;
         }
+#ifdef YAQLE_USE_COUT
         std::cout << "WARNING: Gimbal locked: Third angle has been set to 0" << std::endl;
+#endif
     }
 
     if (isExtrinsic)
@@ -441,6 +434,7 @@ Quat getRotation(Vector3D const &v1, Vector3D const &v2)
 // Unit quaternions
 Quat unitQuat(float angle, Vector3D im, bool degree)
 {
+    // TODO: Check that im is not null
     if (angle == 0)
     {
         return Quat(1, 0, 0, 0);

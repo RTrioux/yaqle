@@ -1,6 +1,7 @@
 #include "dquat.hpp"
 #include <etl/array.h>
 #include <gtest/gtest.h>
+#include <iostream>
 
 using namespace yaqle;
 
@@ -25,10 +26,14 @@ class DualQuatTest : public ::testing::Test
         dq1 = DQuat(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0);
         dq2 = DQuat(-1.0, -2.0, -3.0, -4.0, -5.0, -6.0, -7.0, -8.0);
         dq3 = DQuat(2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0);
+
+        rt1 = rigidTransform(unitQuat(0, 0, 0, 0), 0, 0, 0);
+        rt2 = rigidTransform(unitQuat(M_PI, 0, 0, 1), 2, -1, 1);
     }
 
     // Test dual quaternions
     DQuat dq1, dq2, dq3;
+    DQuat rt1, rt2;
 };
 
 /* Constructors */
@@ -172,4 +177,23 @@ TEST_F(DualQuatTest, ConjugateDefinitions)
     EXPECT_TRUE(compareDualQuat(conjResult, conjExpected));
     EXPECT_TRUE(compareDualQuat(dconjResult, dconjExpected));
     EXPECT_TRUE(compareDualQuat(mconResult, mconExpected));
+}
+
+TEST_F(DualQuatTest, Normalization)
+{
+    DQuat dqn = dq1.normalize();
+    EXPECT_TRUE(dqn.isNormalized());
+}
+
+TEST_F(DualQuatTest, slerp)
+{
+    for (float t = 0; t < 1; t += 0.001)
+    {
+        DQuat rt = slerp(rt1, rt2, t);
+        Vector3D pos = rt.pos();
+
+        ASSERT_NEAR(pos[0], 2 * t, 1e-6);
+        ASSERT_NEAR(pos[1], -t, 1e-6);
+        ASSERT_NEAR(pos[2], t, 1e-6);
+    }
 }

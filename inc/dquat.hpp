@@ -29,8 +29,8 @@ class DQuat
     DQuat operator+(DQuat const &) const;
     DQuat operator-(DQuat const &) const;
     DQuat operator-() const;
-    bool operator==(Quat const &) const;
-    bool operator!=(Quat const &) const;
+    bool operator==(DQuat const &) const;
+    bool operator!=(DQuat const &) const;
     float &operator[](size_t index);
     float operator[](size_t index) const;
     DQuat operator/(DQuat const &) const;

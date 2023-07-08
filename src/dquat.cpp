@@ -32,14 +32,8 @@ DQuat::DQuat(Quat hRe, Quat hIm)
     m_arr[7] = m_hIm[3];
 }
 
-DQuat::DQuat(float arr[8])
+DQuat::DQuat(float arr[8]) : DQuat(Quat(arr[0], arr[1], arr[2], arr[3]), Quat(arr[4], arr[5], arr[6], arr[7]))
 {
-    m_hRe = Quat(arr[0], arr[1], arr[2], arr[3]);
-    m_hIm = Quat(arr[4], arr[5], arr[6], arr[7]);
-    for (size_t i = 0; i < 8; i++)
-    {
-        m_arr[i] = arr[i];
-    }
 }
 
 DQuat::DQuat(float hRe[4], float hIm[4]) : DQuat(Quat(hRe), Quat(hIm))
@@ -60,7 +54,7 @@ bool DQuat::isEqual(const DQuat &dq) const
 {
     for (size_t i = 0; i < 8; i++)
     {
-        if (m_arr[i] != dq[i])
+        if (fabs(m_arr[i] - dq[i]) > YAQLE_EPS)
         {
             return false;
         }
@@ -72,7 +66,7 @@ bool DQuat::isNull() const
 {
     for (size_t i = 0; i < 8; i++)
     {
-        if (m_arr[i] != 0)
+        if (fabs(m_arr[i]) > YAQLE_EPS)
         {
             return false;
         }
@@ -82,20 +76,14 @@ bool DQuat::isNull() const
 
 bool DQuat::isNormalized() const
 {
-    static const float eps = 1e-6;
     DQuat dq = (*this) * this->conj();
-    bool cond1 = (dq.hRe().norm() - 1.0f) < eps ? true : false;
+    bool cond1 = (dq.hRe().norm() - 1.0f) < YAQLE_EPS ? true : false;
 
     if (!cond1)
         return false;
 
-    bool cond2 = true;
-    for (size_t i = 0; i < 4; i++)
-    {
-        if (dq.hIm()[i] > eps)
-            return false;
-    }
-    return true;
+    bool cond2 = dq.hIm().isNull();
+    return cond1 and cond2;
 }
 
 DQuat slerp(const DQuat &dq0, const DQuat &dq1, float t)
@@ -161,16 +149,16 @@ DQuat DQuat::operator-() const
     return DQuat(arr);
 }
 
-bool DQuat::operator==(Quat const &dq) const
+bool DQuat::operator==(DQuat const &dq) const
 {
     return !((*this) != dq);
 }
 
-bool DQuat::operator!=(Quat const &dq) const
+bool DQuat::operator!=(DQuat const &dq) const
 {
     for (size_t i = 0; i < 8; i++)
     {
-        if (m_arr[i] != dq[i])
+        if ((m_arr[i] - dq[i]) > YAQLE_EPS)
         {
             return true;
         }
@@ -190,13 +178,15 @@ float DQuat::operator[](size_t index) const
 
 DQuat DQuat::operator/(DQuat const &dq) const
 {
-    // dq1 / dq2 = (Q1_re + e.Q1_im) /(Q2_re + e.Q2_im) = (Q1_re * Q2_re) / Q2_re² + e.(Q2_re * Q1_im - Q1_re * Q2_im) /
-    // Q2_re²
-    Quat Q1_re = m_hRe;
-    Quat Q1_im = m_hIm;
-    Quat Q2_re = dq.hRe();
-    Quat Q2_im = dq.hIm();
-    return DQuat((Q1_re * Q2_re) / (Q2_re * Q2_re), (Q2_re * Q1_im - Q1_re * Q2_im) / (Q2_re * Q2_re));
+    // dq0 / dq1 = (Q0_re + e.Q0_im) /(Q1_re + e.Q1_im) = (Q0_re * Q1_re) / Q1_re² + e.(Q1_re * Q0_im - Q0_re * Q1_im) /
+    // Q1_re²
+
+    // TODO: Check that Q1_re is not null
+    Quat Q0_re = m_hRe;
+    Quat Q0_im = m_hIm;
+    Quat Q1_re = dq.hRe();
+    Quat Q1_im = dq.hIm();
+    return DQuat((Q0_re * Q1_re) / (Q1_re * Q1_re), (Q1_re * Q0_im - Q0_re * Q1_im) / (Q1_re * Q1_re));
 }
 
 #ifdef YAQLE_USE_COUT
@@ -243,6 +233,7 @@ Quat DQuat::hIm() const
 
 DQuat DQuat::norm() const
 {
+    // TODO: Check that A_norm is not null
     Quat A = this->hRe();
     Quat B = this->hIm();
 
@@ -310,12 +301,14 @@ DQuat rigidTransform(Quat Qr, Vector3D pos)
 
 DQuat rigidTransform(Quat Qr, float x, float y, float z)
 {
+    // TODO: Check that Qr is not null
     Quat t(0, x, y, z);
     return DQuat(Qr, 0.5f * t * Qr).normalize();
 }
 
 DQuat DQuat::inverse() const
 {
+    // TODO: Check that norm2 is not null
     Quat Q_re = m_hRe / m_hRe.norm2();
     Quat Q_im = -m_hRe * m_hIm / m_hRe.norm2();
     return DQuat(Q_re, Q_im);
