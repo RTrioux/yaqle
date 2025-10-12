@@ -134,7 +134,7 @@ std::ostream &operator<<(std::ostream &out, Vector3D const &vec)
 #endif
 
 /** Algebra **/
-Vector3D Vector3D::crossProd(Vector3D const &B) const
+Vector3D Vector3D::cross(Vector3D const &B) const
 {
     float arr[3];
     for (size_t i = 0; i < 3; i++)
@@ -144,20 +144,20 @@ Vector3D Vector3D::crossProd(Vector3D const &B) const
     return Vector3D(arr);
 }
 
-float Vector3D::innerProd(Vector3D const &B) const
+float Vector3D::dot(Vector3D const &B) const
 {
-    float innerProd = 0;
+    float dot = 0;
     for (size_t i = 0; i < 3; i++)
     {
-        innerProd += this->m_arr[i] * B.m_arr[i];
+        dot += this->m_arr[i] * B.m_arr[i];
     }
-    return innerProd;
+    return dot;
 }
 
-float Vector3D::getAngle(Vector3D const &B) const
+float Vector3D::angle(Vector3D const &B) const
 {
     // TODO: Check that norm are non null
-    return acosf(this->innerProd(B) / (norm() * B.norm()));
+    return acosf(this->dot(B) / (norm() * B.norm()));
 }
 
 Vector3D Vector3D::normalize() const
@@ -173,7 +173,7 @@ float Vector3D::norm() const
 
 float Vector3D::norm2() const
 {
-    return this->innerProd(*this);
+    return this->dot(*this);
 }
 
 /** Display **/

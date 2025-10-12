@@ -39,13 +39,13 @@ class DQuat
 #endif
 
     /** Algebra **/
-    Quat hRe() const;        // Return Hyper real part
-    Quat hIm() const;        // Return Hyper Im part
-    DQuat norm() const;      // Yes norms are dual numbers
+    Quat hRe() const;   // Return Hyper real part
+    Quat hIm() const;   // Return Hyper Im part
+    DQuat norm() const; // Yes norms are dual numbers
     DQuat norm2() const;
-    DQuat conj() const;      // Quaternion conjugate    (A+e.B) => (A* + e.B*)
-    DQuat dconj() const;     // Dual conjugate          (A+e.B) => (A - e.B)
-    DQuat mconj() const;     // Mixed conjugate         (A+e.B) => (A* - e.B*)
+    DQuat conj() const;  // Quaternion conjugate    (A+e.B) => (A* + e.B*)
+    DQuat dconj() const; // Dual conjugate          (A+e.B) => (A - e.B)
+    DQuat mconj() const; // Mixed conjugate         (A+e.B) => (A* - e.B*)
     DQuat inverse() const;
     DQuat normalize() const; // Return normalized dual
     Vector3D pos() const;
@@ -53,7 +53,7 @@ class DQuat
     /** Display **/
 #ifdef YAQLE_USE_COUT
     void print() const;
-    void writeToFile(std::ofstream &) const;
+    void writeToFile(const char *, std::ofstream &) const;
 #endif
 
   private:
@@ -101,8 +101,6 @@ inline DQuat norm2(DQuat const &dq)
 {
     return dq.norm2();
 }
-// inline Quat normalize(Quat const &q) { return q.normalize(); }
-// inline float getAngle(Quat const &q) { return q.getAngle(); }
 
 /** Tools **/
 

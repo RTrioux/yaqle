@@ -27,8 +27,8 @@ class DualQuatTest : public ::testing::Test
         dq2 = DQuat(-1.0, -2.0, -3.0, -4.0, -5.0, -6.0, -7.0, -8.0);
         dq3 = DQuat(2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0);
 
-        rt1 = rigidTransform(unitQuat(0, 0, 0, 0), 0, 0, 0);
-        rt2 = rigidTransform(unitQuat(M_PI, 0, 0, 1), 2, -1, 1);
+        rt1 = rigidTransform(fromAxisAngle(0, 0, 0, 0), 0, 0, 0);
+        rt2 = rigidTransform(fromAxisAngle(M_PI, 0, 0, 1), 2, -1, 1);
     }
 
     // Test dual quaternions

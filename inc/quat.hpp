@@ -1,5 +1,6 @@
 #ifndef QUAT_HPP
 #define QUAT_HPP
+#include "matrix.hpp"
 #include "vector3d.hpp"
 #include <cmath>
 #include <etl/array.h>
@@ -7,9 +8,20 @@
 
 #include <etl/static_assert.h>
 #include <etl/string.h>
-#include <fstream>
 
 #ifdef YAQLE_USE_COUT
+#define YAQLE_FORCE_NORMALIZED
+
+#ifdef YAQLE_FORCE_NORMALIZED
+#define YAQLE_QUAT_MAYBE_NORMALIZE(Q_NAME) Quat Q_NAME = this->normalize();
+#define YAQLE_QUAT_ASSERT_NORMALIZED(Q_NAME)                                                                           \
+    ETL_ASSERT(fabs(Q_NAME.norm() - 1) < YAQLE_EPS, ETL_ERROR(yaqle_quat_not_normalized));
+#else
+#define YAQLE_QUAT_MAYBE_NORMALIZE(Q_NAME) Quat Q_NAME = *this;
+#define YAQLE_QUAT_ASSERT_NORMALIZED(Q_NAME)
+#endif
+
+#include <fstream>
 #include <ostream>
 #endif
 
@@ -88,8 +100,8 @@ class Quat
 
     /** Rotations **/
     // If the quaternion is unitary then it describes a 3D rotation
-    // getAngle return the angle of this 3D rotation.
-    float getAngle() const;
+    // angle return the angle of this 3D rotation.
+    float angle() const;
 
     Vector3D rotate(Vector3D const &) const;
     Vector3D rotate(float[3]) const;
@@ -99,10 +111,13 @@ class Quat
     Vector3D toEuler(Sequence seq = ZYX, bool degree = false,
                      bool isExtrinsic = false) const; // YPR as default sequence
 
+    // Intrinsic Tait-Bryan (yaw, pitch, roll) angles as default sequence
+    Matrix<3, 3> toRotationMatrix(Sequence seq = ZYX, bool isExtrinsic = false) const;
+
     /** Display **/
 #ifdef YAQLE_USE_COUT
     void print() const;
-    void writeToFile(std::ofstream &) const;
+    void writeToFile(const char *id, std::ofstream &file) const;
 #endif
 
   private:
@@ -148,9 +163,9 @@ inline Quat normalize(Quat const &q)
 {
     return q.normalize();
 }
-inline float getAngle(Quat const &q)
+inline float angle(Quat const &q)
 {
-    return q.getAngle();
+    return q.angle();
 }
 
 inline Vector3D rotate(Quat const &q, Vector3D const &v)
@@ -168,7 +183,7 @@ inline Vector3D toEuler(Quat const &q, Quat::Sequence seq = Quat::ZYX, bool degr
     return q.toEuler(seq, degree, isExtrinsic);
 }
 
-inline float innerProd(Quat const &q1, Quat const &q2)
+inline float dot(Quat const &q1, Quat const &q2)
 {
     float sum = 0.0f;
     for (size_t i = 0; i < 4; i++)
@@ -182,8 +197,10 @@ inline float innerProd(Quat const &q1, Quat const &q2)
 Quat getRotation(Vector3D const &v1, Vector3D const &v2);
 
 // Unit quaternions
-Quat unitQuat(float angle, Vector3D im, bool degree = false);
-Quat unitQuat(float angle, float x, float y, float z, bool degree = false);
+Quat fromAxisAngle(float angle, Vector3D im, bool degree = false);
+Quat fromAxisAngle(float angle, float x, float y, float z, bool degree = false);
+Quat uQ(float angle, Vector3D im, bool degree = false); // Unit quaternion (alias of fromAxisAngle)
+Quat uQ(float angle, float x, float y, float z, bool degree = false);
 
 Quat fromEuler(etl::array<float, 3> euler, Quat::Sequence seq = Quat::ZYX, bool degree = false,
                bool isExtrinsic = false);

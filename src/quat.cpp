@@ -7,8 +7,6 @@
 
 using namespace etl;
 
-// TODO: Find a better way to handle errors
-
 namespace yaqle
 {
 
@@ -105,8 +103,8 @@ Quat Quat::operator-() const
 
 Quat Quat::operator*(Quat const &q) const
 {
-    float q0 = m_arr[0] * q[0] - innerProd(m_im, q.m_im);
-    Vector3D im = m_arr[0] * q.m_im + q[0] * m_im + crossProd(m_im, q.m_im);
+    float q0 = m_arr[0] * q[0] - dot(m_im, q.m_im);
+    Vector3D im = m_arr[0] * q.m_im + q[0] * m_im + cross(m_im, q.m_im);
     return Quat(q0, im);
 }
 
@@ -230,7 +228,7 @@ Quat Quat::normalize() const
 
 /** Rotations **/
 
-float Quat::getAngle() const
+float Quat::angle() const
 {
     // Check that q0 domain [-1, 1]
     return 2 * acosf(m_arr[0]);
@@ -238,14 +236,16 @@ float Quat::getAngle() const
 
 Vector3D Quat::rotate(Vector3D const &vec) const
 {
+    YAQLE_QUAT_MAYBE_NORMALIZE(q);
     Quat imQuat(0, vec[0], vec[1], vec[2]);
-    imQuat = (*this) * imQuat * (*this).inverse();
+    imQuat = q * imQuat * q.inverse();
     return Vector3D(imQuat[1], imQuat[2], imQuat[3]);
 }
 
 Vector3D Quat::rotate(float arr[3]) const
 {
-    return this->rotate(Vector3D(arr[0], arr[1], arr[2]));
+    YAQLE_QUAT_MAYBE_NORMALIZE(q);
+    return q.rotate(Vector3D(arr[0], arr[1], arr[2]));
 }
 
 /** Conversions **/
@@ -259,11 +259,11 @@ Vector3D Quat::toEuler(Sequence seq, bool degree, bool isExtrinsic) const
      * Solve alpha, beta, gamma such that R_xxx = R_q for the selected sequence xxx.
      *
      * The 12 equations are solved offline thanks to wxmaxima and hardcoded here.
+     * Solution can also be found here :
+     * https://ntrs.nasa.gov/api/citations/19770024290/downloads/19770024290.pdf
      *
      * IMPORTANT: The intrinsic convention is used to compute the rotation matrices
      *            (See: https://www.wikiwand.com/en/Davenport_chained_rotations#)
-     * IMPORTANT: This function assume that the quaternion is already normalized.
-     *            Therefore, we don't force the normalization in order to gain performance.
      **/
 
     static map<Sequence, string<4>, 12> seq2str = {{XYX, "XYX"}, {XYZ, "XYZ"}, {XZX, "XZX"}, {XZY, "XZY"},
@@ -271,8 +271,10 @@ Vector3D Quat::toEuler(Sequence seq, bool degree, bool isExtrinsic) const
                                                    {ZXY, "ZXY"}, {ZXZ, "ZXZ"}, {ZYX, "ZYX"}, {ZYZ, "ZYZ"}};
     string<4> strSeq = seq2str[seq];
 
-    Quat Q = *this;
-    // TODO: Check if the rotation is valid
+    YAQLE_QUAT_MAYBE_NORMALIZE(Q);
+
+    // Compute R_q coefficients the equivalent rotation matrix of the quaternion
+    // q.v.q* for an arbitrary unitary quaternion and arbitrary vector v yields:
 
     float q0 = Q[0], q1 = Q[1], q2 = Q[2], q3 = Q[3];
     float a = 1 - 2 * (q2 * q2 + q3 * q3), b = 2 * (q1 * q2 - q3 * q0), c = 2 * (q1 * q3 + q2 * q0),
@@ -280,6 +282,9 @@ Vector3D Quat::toEuler(Sequence seq, bool degree, bool isExtrinsic) const
           g = 2 * (q1 * q3 - q2 * q0), h = 2 * (q2 * q3 + q1 * q0), i = 1 - 2 * (q1 * q1 + q2 * q2);
     Vector3D euler;
 
+    // By identification from R_q and R_xxx
+    // You can easily find for each combinaison a solution for each angle
+    // R_xxx = R_1.R_2.R_3 (This intrinsic convention)
     switch (seq)
     {
     case XYX:
@@ -398,6 +403,48 @@ Vector3D Quat::toEuler(Sequence seq, bool degree, bool isExtrinsic) const
     return euler;
 }
 
+Matrix<3, 3> Quat::toRotationMatrix(Sequence seq, bool isExtrinsic) const
+{
+    // TODO: CHECK IF IT'S VALID
+
+    static map<Sequence, string<4>, 12> seq2str = {{XYX, "XYX"}, {XYZ, "XYZ"}, {XZX, "XZX"}, {XZY, "XZY"},
+                                                   {YXY, "YXY"}, {YXZ, "YXZ"}, {YZX, "YZX"}, {YZY, "YZY"},
+                                                   {ZXY, "ZXY"}, {ZXZ, "ZXZ"}, {ZYX, "ZYX"}, {ZYZ, "ZYZ"}};
+    string<4> strSeq = seq2str[seq];
+
+    Vector3D euler = toEuler(seq, false, isExtrinsic);
+
+    Matrix<3, 3> R = Matrix<3, 3>::IdentityMatrix();
+    for (size_t i = 0; i < 3; i++)
+    {
+        // R = R_1.R_2.R_3 IS intrinsic but when building it recursively you need to inverse order !
+        // Step 1: R = 1 * R1
+        // Step 2: R = R1 * R2
+        // Step 3: R = R1 * R2 * R3
+        // Therefore R = R * R_x
+        if (strSeq[i] == 'X')
+        {
+            Matrix<3, 3> R_x = {{1, 0, 0}, {0, cosf(euler[i]), -sinf(euler[i])}, {0, sinf(euler[i]), cosf(euler[i])}};
+            R = R * R_x;
+        }
+        else if (strSeq[i] == 'Y')
+        {
+            // R = R * R_y
+            Matrix<3, 3> R_y = {{cosf(euler[i]), 0, sinf(euler[i])}, {0, 1, 0}, {-sinf(euler[i]), 0, cosf(euler[i])}};
+            R = R * R_y;
+        }
+        else if (strSeq[i] == 'Z')
+        {
+            // R = R * R_z
+            Matrix<3, 3> R_z = {{cosf(euler[i]), -sinf(euler[i]), 0}, {sinf(euler[i]), cosf(euler[i]), 0}, {0, 0, 1}};
+            R = R * R_z;
+        }
+    }
+
+    // Combine the rotation matrices
+    return R;
+}
+
 /** Display **/
 
 #ifdef YAQLE_USE_COUT
@@ -415,9 +462,11 @@ void Quat::print() const
     std::cout << ")" << std::endl;
 }
 
-void Quat::writeToFile(std::ofstream &file) const
+void Quat::writeToFile(const char *id, std::ofstream &file) const
 {
-    file << m_arr[0] << ',' << m_arr[1] << ',' << m_arr[2] << ',' << m_arr[3] << std::endl;
+    // id is the name of the quaternion
+    // :q: to specify it's a quaternion
+    file << id << ":q:" << m_arr[0] << ',' << m_arr[1] << ',' << m_arr[2] << ',' << m_arr[3] << std::endl;
 }
 
 #endif
@@ -426,13 +475,20 @@ void Quat::writeToFile(std::ofstream &file) const
 
 Quat getRotation(Vector3D const &v1, Vector3D const &v2)
 {
-    float theta = acosf(innerProd(v1, v2) / (norm(v1) * norm(v2)));
-    Vector3D im = crossProd(v1, v2);
-    return unitQuat(theta, im);
+    /**
+     * Compute the quaternion representing the rotation from vector v1 to vector v2.
+     * Both vectors must be non-null.
+     * The rotation axis is given by the cross product of v1 and v2.
+     * The rotation angle is given by the angle between v1 and v2.
+     * The resulting quaternion is a unit quaternion.
+     */
+    float theta = acosf(dot(v1, v2) / (norm(v1) * norm(v2))); // Angle between the two vectors
+    Vector3D im = cross(v1, v2);                              // Use cross product to get the rotation axis
+    return fromAxisAngle(theta, im);
 }
 
 // Unit quaternions
-Quat unitQuat(float angle, Vector3D im, bool degree)
+Quat fromAxisAngle(float angle, Vector3D im, bool degree)
 {
     // TODO: Check that im is not null
     if (angle == 0)
@@ -457,10 +513,20 @@ Quat unitQuat(float angle, Vector3D im, bool degree)
     }
 }
 
-Quat unitQuat(float angle, float x, float y, float z, bool degree)
+Quat fromAxisAngle(float angle, float x, float y, float z, bool degree)
 {
     angle = degree == true ? angle * M_PI / 180.0f : angle;
-    return unitQuat(angle, Vector3D(x, y, z));
+    return fromAxisAngle(angle, Vector3D(x, y, z));
+}
+
+Quat uQ(float angle, Vector3D im, bool degree)
+{
+    return fromAxisAngle(angle, im, degree);
+}
+
+Quat uQ(float angle, float x, float y, float z, bool degree)
+{
+    return fromAxisAngle(angle, x, y, z, degree);
 }
 
 Quat fromEuler(etl::array<float, 3> euler, Quat::Sequence seq, bool degree, bool isExtrinsic)
@@ -485,6 +551,7 @@ Quat fromEuler(etl::array<float, 3> euler, Quat::Sequence seq, bool degree, bool
 
     if (isExtrinsic)
     {
+        // Normally you need to invert matrix multiplication order but inverting angles is equivalent
         float temp = euler[0];
         euler[0] = euler[2];
         euler[2] = temp;
@@ -507,16 +574,7 @@ Quat fromEuler(etl::array<float, 3> euler, Quat::Sequence seq, bool degree, bool
             Q[i] = Quat(cosf(euler[i] / 2), 0, 0, sinf(euler[i] / 2));
             break;
         }
-        /*
-        if(isExtrinsic)
-        {
-            Qresult = Q[i] * Qresult;
-        }
-        else
-        {
-            Qresult = Qresult * Q[i];
-        }
-        */
+        // eq to Q_1.Q_2.Q_3 i.e Intrinsic convention, for extrinsic the order is inverted above
         Qresult = Qresult * Q[i];
         i++;
     }
@@ -544,18 +602,20 @@ Quat fromEuler(Vector3D euler, Quat::Sequence seq, bool degree, bool isExtrinsic
 
 Quat slerp(const Quat &q1, const Quat &q2, float t)
 {
-    // Calculate the dot product of the two quaternions
+    YAQLE_QUAT_ASSERT_NORMALIZED(q1);
+    YAQLE_QUAT_ASSERT_NORMALIZED(q2);
+    // Calculate the dot product of the two quaternions assumed normalized
     // float dot = q1[0] * q2[0] + q1[1] * q2[1] + q1[2] * q2[2] + q1[3] * q2[3];
-    float dot = innerProd(q1, q2);
+    float dot_q1_q2 = dot(q1, q2);
 
     // Ensure the dot product is within [-1, 1] to avoid numerical issues
     // dot = fmaxf(fminf(dot, 1.0f), -1.0f);
 
     // Determine the direction of the interpolation
-    float direction = (dot < 0) ? -1.0f : 1.0f;
+    float direction = (dot_q1_q2 < 0) ? -1.0f : 1.0f;
 
     // Calculate the angle between the quaternions
-    float angle = acosf(direction * dot);
+    float angle = acosf(direction * dot_q1_q2);
 
     // Calculate the interpolation coefficients
     float sinInverse = 1.0f / sinf(angle);

@@ -237,7 +237,7 @@ DQuat DQuat::norm() const
     Quat A = this->hRe();
     Quat B = this->hIm();
 
-    float AB = innerProd(A, B);
+    float AB = dot(A, B);
 
     float A_norm = A.norm();
     Quat C = A_norm;
@@ -252,7 +252,7 @@ DQuat DQuat::norm2() const
     // To gain performances, we can simplify the computation
     Quat A = this->hRe(); // Implicit construction
     Quat B = this->hIm();
-    float AB = innerProd(A, B);
+    float AB = dot(A, B);
     Quat D = 2 * AB;
     Quat C = A.norm2();
     return DQuat(C, D);
@@ -323,7 +323,7 @@ DQuat DQuat::normalize() const // Return normalized dual
     float A_norm = A.norm();
     float A_norm2 = A_norm * A_norm;
 
-    float AB = innerProd(A, B);
+    float AB = dot(A, B);
 
     Quat C = A / A_norm;
     Quat D = B - AB * A / A_norm2;
@@ -363,8 +363,11 @@ void DQuat::print() const
     std::cout << ")" << std::endl;
 }
 
-void DQuat::writeToFile(std::ofstream &file) const
+void DQuat::writeToFile(const char *id, std::ofstream &file) const
 {
+    // id is the name of the dual quaternion
+    // :dq: to specify it's a dual quaternion
+    file << id << ":dq:";
     for (size_t i = 0; i < 8; i++)
     {
         char separator = ',';

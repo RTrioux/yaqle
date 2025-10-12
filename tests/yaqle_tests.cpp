@@ -2,6 +2,8 @@
 #include <gtest/gtest.h>
 
 // Include the header files of the components you want to test
+#include "dquat.hpp"
+#include "matrix.hpp"
 #include "quat.hpp"
 
 using namespace yaqle;

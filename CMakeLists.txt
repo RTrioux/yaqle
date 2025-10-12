@@ -12,7 +12,8 @@ message(STATUS "${Green}Processing " ${ROOT} ${ColourReset})
 include_directories(${CMAKE_SOURCE_DIR}/inc)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/_deps/etl-src/include)
 
-file(GLOB SOURCES "src/*.cpp")
+#file(GLOB SOURCES "src/*.cpp")
+set(SOURCES "src/main.cpp" "src/vector3d.cpp" "src/quat.cpp"  "src/dquat.cpp")
 
 FetchContent_Declare(
     etl
@@ -37,6 +38,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
 if(YAQLE_USE_COUT)
     target_compile_definitions(${PROJECT_NAME} PUBLIC YAQLE_USE_COUT)
 endif()
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC
     ETL_NO_STL=1

@@ -25,8 +25,8 @@ class QuaternionTest : public ::testing::Test
         q2 = Quat(-1.0, -2.0, -3.0, -4.0);
         q3 = Quat(2.0, 4.0, 6.0, 8.0);
 
-        uq1 = unitQuat(0, 0, 0, 1);
-        uq2 = unitQuat(M_PI, 0, 0, 1);
+        uq1 = fromAxisAngle(0, 0, 0, 1);
+        uq2 = fromAxisAngle(M_PI, 0, 0, 1);
     }
 
     // Test quaternions
@@ -161,6 +161,48 @@ TEST_F(QuaternionTest, Vector3DEtlArrayConstructor)
     EXPECT_EQ(v[2], arr[2]);
 }
 
+/* Complex operations */
+
+TEST_F(QuaternionTest, Inverse)
+{
+    Quat q_inv = q1.inverse();
+    Quat identity = q1 * q_inv;
+
+    // The result should be close to the identity quaternion
+    EXPECT_NEAR(identity[0], 1.0, 1e-6);
+    EXPECT_NEAR(identity[1], 0.0, 1e-6);
+    EXPECT_NEAR(identity[2], 0.0, 1e-6);
+    EXPECT_NEAR(identity[3], 0.0, 1e-6);
+}
+
+TEST_F(QuaternionTest, Conjugate)
+{
+    Quat q_conj = q1.conj();
+    EXPECT_EQ(q_conj[0], q1[0]);
+    EXPECT_EQ(q_conj[1], -q1[1]);
+    EXPECT_EQ(q_conj[2], -q1[2]);
+    EXPECT_EQ(q_conj[3], -q1[3]);
+}
+
+TEST_F(QuaternionTest, Real)
+{
+    EXPECT_EQ(q1.re(), q1[0]);
+}
+
+TEST_F(QuaternionTest, Imaginary)
+{
+    Vector3D im = q1.im();
+    EXPECT_EQ(im[0], q1[1]);
+    EXPECT_EQ(im[1], q1[2]);
+    EXPECT_EQ(im[2], q1[3]);
+}
+
+TEST_F(QuaternionTest, Norm)
+{
+    float expected_norm = sqrtf(q1[0] * q1[0] + q1[1] * q1[1] + q1[2] * q1[2] + q1[3] * q1[3]);
+    EXPECT_NEAR(q1.norm(), expected_norm, 1e-6);
+}
+
 /* Arithmetics */
 // Test addition operator
 TEST_F(QuaternionTest, AdditionOperator)
@@ -186,6 +228,67 @@ TEST_F(QuaternionTest, QuaternionProduct)
     EXPECT_TRUE(compareQuat(result, expected));
 }
 
+/* Conversions tests */
+TEST_F(QuaternionTest, fromAxisAngleIdentity)
+{
+    Quat q = fromAxisAngle(0, 0, 0, 1, false);
+    EXPECT_NEAR(q.norm(), 1.0, 1e-6);
+    EXPECT_NEAR(q[0], 1.0, 1e-6);
+    EXPECT_NEAR(q[1], 0.0, 1e-6);
+    EXPECT_NEAR(q[2], 0.0, 1e-6);
+    EXPECT_NEAR(q[3], 0.0, 1e-6);
+}
+
+TEST_F(QuaternionTest, fromAxisAnglePiRotation)
+{
+    Quat q = fromAxisAngle(M_PI, 1, 0, 0, false);
+    EXPECT_NEAR(q.norm(), 1.0, 1e-6);
+    EXPECT_NEAR(q[0], 0.0, 1e-6);
+    EXPECT_NEAR(q[1], 1.0, 1e-6);
+    EXPECT_NEAR(q[2], 0.0, 1e-6);
+    EXPECT_NEAR(q[3], 0.0, 1e-6);
+}
+
+TEST_F(QuaternionTest, fromAxisAngleNormalizationForced)
+{
+    Quat q = fromAxisAngle(M_PI, 10, 0, 0, true);
+    EXPECT_NEAR(q.norm(), 1.0, 1e-6);
+    // EXPECT_NEAR(q[0], 0.0, 1e-6);
+    // EXPECT_NEAR(q[1], 1.0, 1e-6);
+    EXPECT_NEAR(q[2], 0.0, 1e-6);
+    EXPECT_NEAR(q[3], 0.0, 1e-6);
+}
+
+TEST_F(QuaternionTest, toEuler_fromEuler)
+{
+    Quat q = fromAxisAngle(M_PI / 4, 1, 1, 1, false);
+    Vector3D euler = q.toEuler(Quat::ZYX, false, false);
+    Quat q_test = fromEuler(euler, Quat::ZYX, false, false);
+
+    EXPECT_TRUE(compareQuat(q, q_test, 1e-5));
+}
+
+TEST_F(QuaternionTest, toEulerXYZ)
+{
+    Quat q = fromAxisAngle(M_PI / 2, 1, 0, 0, false);
+    Vector3D euler = q.toEuler(Quat::XYZ, false, false);
+    EXPECT_NEAR(euler[0], M_PI / 2, 1e-5); // Roll
+    EXPECT_NEAR(euler[1], 0.0, 1e-5);      // Pitch
+    EXPECT_NEAR(euler[2], 0.0, 1e-5);      // Yaw
+}
+
+/* Spatial rotation tests */
+TEST_F(QuaternionTest, RotateVector)
+{
+    Vector3D v(1, 0, 0);
+    Quat q = fromAxisAngle(M_PI / 2, 0, 0, 1, false);
+    Vector3D v_rot = q.rotate(v);
+    EXPECT_NEAR(v_rot[0], 0.0, 1e-5);
+    EXPECT_NEAR(v_rot[1], 1.0, 1e-5);
+    EXPECT_NEAR(v_rot[2], 0.0, 1e-5);
+}
+
+// Test SLERP between two quaternions
 TEST_F(QuaternionTest, QuaternionSLERP)
 {
     for (float t = 0; t < 1; t += 0.01)

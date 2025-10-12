@@ -38,9 +38,9 @@ class Vector3D
 #endif
 
     /** Algebra **/
-    Vector3D crossProd(Vector3D const &) const;
-    float innerProd(Vector3D const &) const;
-    float getAngle(Vector3D const &) const;
+    Vector3D cross(Vector3D const &) const;
+    float dot(Vector3D const &) const;
+    float angle(Vector3D const &) const;
 
     // Calculate angle between two vectors in radian [-pi ; pi]
     Vector3D normalize() const;
@@ -65,17 +65,17 @@ inline bool isNull(Vector3D const &v)
 {
     return v.isNull();
 }
-inline Vector3D crossProd(Vector3D const &v1, Vector3D const &v2)
+inline Vector3D cross(Vector3D const &v1, Vector3D const &v2)
 {
-    return v1.crossProd(v2);
+    return v1.cross(v2);
 }
-inline float innerProd(Vector3D const &v1, Vector3D const &v2)
+inline float dot(Vector3D const &v1, Vector3D const &v2)
 {
-    return v1.innerProd(v2);
+    return v1.dot(v2);
 }
-inline float getAngle(Vector3D const &v1, Vector3D const &v2)
+inline float angle(Vector3D const &v1, Vector3D const &v2)
 {
-    return v1.getAngle(v2);
+    return v1.angle(v2);
 }
 inline Vector3D normalize(Vector3D const &v)
 {

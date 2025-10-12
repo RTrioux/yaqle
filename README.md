@@ -24,19 +24,19 @@ One can simply instantiate quaternions.
     Quat Q2 = Quat(1, Vector3D(2, 3, 4));
 ```
 
-One can create unitary quaternions from angle/axis argument from `unitQuat`.
+One can create unitary quaternions from angle/axis argument from `fromAxisAngle`.
 This function yield a normalized quaternion with respect to the specified angle, hence q0 is always equal to cos(angle/2),
 then the imaginary part is adjusted such that the norm is unitary. (angle = 0 => Q = (1,0,0,0)).
 
 ```cpp
     /** Create a unit quaternion describing a rotation `angle` along a given axis **/
     /* (float angle, float x, float y, float z, bool degree = false) */
-    Quat Uq1 = unitQuat(M_PI_4, 1, 0, 0); // Rotation of Pi/4 rad about X axis 
-    Quat Uq2 = unitQuat(45, 1, 0, 0, true); // Rotation of 45° about X axis 
+    Quat Uq1 = fromAxisAngle(M_PI_4, 1, 0, 0); // Rotation of Pi/4 rad about X axis 
+    Quat Uq2 = fromAxisAngle(45, 1, 0, 0, true); // Rotation of 45° about X axis 
 
     /* (float real, Vector3D im, bool degree = false) */
-    Quat Uq3 = unitQuat(M_PI_4, Vector3D(1, 0, 0));
-    Quat Uq4 = unitQuat(45, Vector3D(1, 0, 0), true);
+    Quat Uq3 = fromAxisAngle(M_PI_4, Vector3D(1, 0, 0));
+    Quat Uq4 = fromAxisAngle(45, Vector3D(1, 0, 0), true);
 ```
 
 See **Euler <=> Quaternion conversion** section for creating quaternion from Euler angles
@@ -95,7 +95,7 @@ The sequence can be selected through the `Sequence` enum in `Quat` class.
 ```cpp
     /** Spatial rotations **/
     /* Euler <-> Quaternion conversions */
-    Q0 = unitQuat(M_PI_4, 1,1,0); // >> (cos(Pi/4/2), 0.27, 0.27, 0)
+    Q0 = fromAxisAngle(M_PI_4, 1,1,0); // >> (cos(Pi/4/2), 0.27, 0.27, 0)
     // Default settings (ZYX/radian/intrinsic)
     Vector3D ypr = Q0.toEuler();
     cout << ypr << endl; // >> (0.169918, 0.523599, 0.61548)
@@ -111,12 +111,12 @@ The sequence can be selected through the `Sequence` enum in `Quat` class.
     
     /* 3D Rotation */
     Vector3D ex(1,0,0),ey(0,1,0),ez(0,0,1);
-    Q0 = unitQuat(M_PI_2,0,1,0);
+    Q0 = fromAxisAngle(M_PI_2,0,1,0);
     cout << Q0.rotateVector(ex) << endl; // >> (~0, 0, -1)
     cout << Q0.rotateVector(ey) << endl; // >> (0, 1, 0)
     cout << Q0.rotateVector(ez) << endl; // >> (1, 0, ~0)
 
-    Q0 = unitQuat(-M_PI_2,0,1,0);
+    Q0 = fromAxisAngle(-M_PI_2,0,1,0);
     cout << Q0.rotateVector(ex) << endl; // >> (~0, 0, 1)
     cout << Q0.rotateVector(ey) << endl; // >> (0, 1, 0)
     cout << Q0.rotateVector(ez) << endl; // >> (-1, 0, ~0)
