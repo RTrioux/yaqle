@@ -178,7 +178,7 @@ float Vector3D::norm2() const
 
 /** Display **/
 
-#if YAQLE_USE_COUT
+#ifdef YAQLE_USE_COUT
 void Vector3D::print() const
 {
     std::cout << "(";

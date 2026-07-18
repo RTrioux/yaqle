@@ -12,7 +12,9 @@ using namespace yaqle;
 
 int main()
 {
+    cout << "Test of the YAQLE library" << endl;
 
+#ifdef YAQLE_USE_COUT
     // Generation Animation
     {
         // Quaternion animation
@@ -51,6 +53,9 @@ int main()
             dq.writeToFile("dq", file);
         }
     }
+#else
+    cout << "YAQLE_USE_COUT is OFF: file output demo skipped." << endl;
+#endif
 
     return 0;
 }

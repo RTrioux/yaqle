@@ -10,6 +10,7 @@
 #include <iostream>
 #endif
 
+// This must be in header because of the template, otherwise it will not be compiled and will lead to linker errors.
 namespace yaqle
 {
 

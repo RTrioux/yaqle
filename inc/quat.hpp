@@ -12,6 +12,10 @@
 #ifdef YAQLE_USE_COUT
 #define YAQLE_FORCE_NORMALIZED
 
+#include <fstream>
+#include <ostream>
+#endif
+
 #ifdef YAQLE_FORCE_NORMALIZED
 #define YAQLE_QUAT_MAYBE_NORMALIZE(Q_NAME) Quat Q_NAME = this->normalize();
 #define YAQLE_QUAT_ASSERT_NORMALIZED(Q_NAME)                                                                           \
@@ -19,10 +23,6 @@
 #else
 #define YAQLE_QUAT_MAYBE_NORMALIZE(Q_NAME) Quat Q_NAME = *this;
 #define YAQLE_QUAT_ASSERT_NORMALIZED(Q_NAME)
-#endif
-
-#include <fstream>
-#include <ostream>
 #endif
 
 namespace yaqle

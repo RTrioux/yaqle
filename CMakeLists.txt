@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.17.3)
 get_filename_component(ROOT ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+option(YAQLE_USE_COUT "Enable cout-based output" OFF)
+
 Include(FetchContent)
 
 set(PROJECT_NAME ${ROOT})
@@ -39,8 +42,6 @@ if(YAQLE_USE_COUT)
     target_compile_definitions(${PROJECT_NAME} PUBLIC YAQLE_USE_COUT)
 endif()
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
 target_compile_definitions(${PROJECT_NAME} PUBLIC
     ETL_NO_STL=1
     ETL_USING_STL=0
@@ -61,8 +62,33 @@ else()
     target_compile_definitions(${PROJECT_NAME} PUBLIC ETL_NO_CHECKS=1)
 endif()
 
-include(Tests)
+if(YAQLE_BUILD_TESTS)
+    include(Tests)
+endif()
 
 # Lib generation
-# add_library(lib${PROJECT_NAME} src/quat.cpp src/vector3d.cpp)
-# set_target_properties(lib${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
+add_library(lib${PROJECT_NAME} src/quat.cpp src/vector3d.cpp src/dquat.cpp)
+target_link_libraries(lib${PROJECT_NAME} PRIVATE etl::etl)
+
+if(YAQLE_USE_COUT)
+    target_compile_definitions(lib${PROJECT_NAME} PUBLIC YAQLE_USE_COUT)
+endif()
+
+target_compile_definitions(lib${PROJECT_NAME} PUBLIC
+    ETL_NO_STL=1
+    ETL_USING_STL=0
+    ETL_FORCE_STD_INITIALIZER_LIST=1
+)
+
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+    target_compile_options(lib${PROJECT_NAME} PUBLIC -Og -g)
+    target_compile_definitions(lib${PROJECT_NAME} PUBLIC ETL_USING_EXCEPTIONS=1)
+elseif("${CMAKE_BUILD_TYPE}" STREQUAL "ReleaseWithException")
+    target_compile_options(lib${PROJECT_NAME} PUBLIC -O1)
+    target_compile_definitions(lib${PROJECT_NAME} PUBLIC ETL_USING_EXCEPTIONS=1)
+else()
+    target_compile_options(lib${PROJECT_NAME} PUBLIC -O1)
+    target_compile_definitions(lib${PROJECT_NAME} PUBLIC ETL_NO_CHECKS=1)
+endif()
+
+set_target_properties(lib${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})

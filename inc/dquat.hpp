@@ -1,6 +1,7 @@
 #ifndef DQUAT_HPP
 #define DQUAT_HPP
 #include "quat.hpp"
+#include <stdexcept>
 
 namespace yaqle
 {
