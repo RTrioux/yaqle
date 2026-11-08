@@ -12,17 +12,17 @@ message(STATUS "Fetching Google Test")
 FetchContent_MakeAvailable(googletest)
 
 set(TEST_SOURCES
-    ${CMAKE_SOURCE_DIR}/tests/yaqle_tests.cpp
-    ${CMAKE_SOURCE_DIR}/tests/quat/quat_tests.cpp
-    ${CMAKE_SOURCE_DIR}/tests/dquat/dquat_tests.cpp
-    ${CMAKE_SOURCE_DIR}/tests/matrix/matrix_tests.cpp
-    ${CMAKE_SOURCE_DIR}/src/dquat.cpp
-    ${CMAKE_SOURCE_DIR}/src/quat.cpp
-    ${CMAKE_SOURCE_DIR}/src/vector3d.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/yaqle_tests.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/quat/quat_tests.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/dquat/dquat_tests.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/matrix/matrix_tests.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/dquat.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/quat.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/vector3d.cpp
 )
 add_executable(tests EXCLUDE_FROM_ALL ${TEST_SOURCES})
 target_link_libraries(tests PRIVATE gtest gtest_main)
-target_include_directories(tests PUBLIC ${CMAKE_SOURCE_DIR}/tests)
+target_include_directories(tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 target_include_directories(tests PUBLIC ${PROJECT_SOURCE_DIR}/inc)
 
 

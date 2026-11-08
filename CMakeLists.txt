@@ -6,10 +6,10 @@ option(YAQLE_USE_COUT "Enable cout-based output" OFF)
 Include(FetchContent)
 
 set(PROJECT_NAME yaqle)
-project(${PROJECT_NAME} VERSION 1.0.1 LANGUAGES CXX)
+project(${PROJECT_NAME} VERSION 1.0.2 LANGUAGES CXX)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "bin")
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 message(STATUS "Processing " ${PROJECT_NAME})
 
 #file(GLOB SOURCES "src/*.cpp")
@@ -26,7 +26,7 @@ message(STATUS "Fetching ETL")
 FetchContent_MakeAvailable(etl)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(${PROJECT_NAME} PRIVATE etl::etl)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
@@ -65,7 +65,8 @@ set(LIB_TARGETS lib${PROJECT_NAME})
 add_library(lib${PROJECT_NAME} STATIC ${LIB_SOURCES})
 target_include_directories(lib${PROJECT_NAME}
     PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
 )
 
 # Bare-metal targets (e.g. arm-none-eabi) cannot build shared libraries
@@ -74,7 +75,7 @@ if(SUPPORTS_SHARED)
     add_library(lib${PROJECT_NAME}_shared SHARED ${LIB_SOURCES})
     target_include_directories(lib${PROJECT_NAME}_shared
         PUBLIC
-            $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     )
     set(LIB_TARGETS ${LIB_TARGETS} lib${PROJECT_NAME}_shared)
 endif()
