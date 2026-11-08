@@ -1,19 +1,16 @@
 cmake_minimum_required(VERSION 3.17.3)
-get_filename_component(ROOT ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(YAQLE_USE_COUT "Enable cout-based output" OFF)
 
 Include(FetchContent)
 
-set(PROJECT_NAME ${ROOT})
-project(${PROJECT_NAME})
+set(PROJECT_NAME yaqle)
+project(${PROJECT_NAME} VERSION 1.0.1 LANGUAGES CXX)
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "bin")
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
-include(Colors)
-message(STATUS "${Green}Processing " ${ROOT} ${ColourReset})
-include_directories(${CMAKE_SOURCE_DIR}/inc)
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/_deps/etl-src/include)
+message(STATUS "Processing " ${PROJECT_NAME})
 
 #file(GLOB SOURCES "src/*.cpp")
 set(SOURCES "src/main.cpp" "src/vector3d.cpp" "src/quat.cpp"  "src/dquat.cpp")
@@ -29,6 +26,7 @@ message(STATUS "Fetching ETL")
 FetchContent_MakeAvailable(etl)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(${PROJECT_NAME} PRIVATE etl::etl)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
@@ -65,13 +63,24 @@ endif()
 set(LIB_SOURCES src/quat.cpp src/vector3d.cpp src/dquat.cpp)
 set(LIB_TARGETS lib${PROJECT_NAME})
 add_library(lib${PROJECT_NAME} STATIC ${LIB_SOURCES})
+target_include_directories(lib${PROJECT_NAME}
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+)
 
 # Bare-metal targets (e.g. arm-none-eabi) cannot build shared libraries
 get_property(SUPPORTS_SHARED GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS)
 if(SUPPORTS_SHARED)
     add_library(lib${PROJECT_NAME}_shared SHARED ${LIB_SOURCES})
+    target_include_directories(lib${PROJECT_NAME}_shared
+        PUBLIC
+            $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+    )
     set(LIB_TARGETS ${LIB_TARGETS} lib${PROJECT_NAME}_shared)
 endif()
+
+# Create a default alias for FetchContent usage
+add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS lib${PROJECT_NAME})
 
 foreach(LIB ${LIB_TARGETS})
     target_link_libraries(${LIB} PRIVATE etl::etl)

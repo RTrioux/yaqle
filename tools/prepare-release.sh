@@ -7,14 +7,14 @@
 #   yaqle-<VERSION>-source.zip                      source code (git HEAD)
 #   yaqle-<VERSION>-linux-x86_64.tar.gz             libyaqle.so + libyaqle.a + headers
 #   yaqle-<VERSION>-linux-aarch64.tar.gz            libyaqle.so + libyaqle.a + headers (needs aarch64-linux-gnu-g++)
-#   yaqle-<VERSION>-arm-cortex-m4.tar.gz            libyaqle.a + headers (bare-metal, no .so possible)
+#   yaqle-<VERSION>-arm-none-eabi-hard.tar.gz        libyaqle.a + headers (bare-metal, hard float, no .so possible)
 #
 # Missing cross toolchains are skipped with a warning.
 
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-VERSION="${1:-1.0.0}"
+VERSION="${1:-1.0.1}"
 BUILD_DIR="$PROJECT_ROOT/build-release"
 ARTIFACTS_DIR="$PROJECT_ROOT/release-artifacts"
 CORTEX_M4_FLAGS="-mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard"
@@ -49,7 +49,7 @@ build_package() {
     cmake --build "$build" --target $targets
 
     mkdir -p "$pkg/include" "$pkg/lib"
-    cp "$PROJECT_ROOT"/inc/*.hpp "$pkg/include/"
+    cp "$PROJECT_ROOT"/include/*.hpp "$pkg/include/"
     for lib in $libs; do
         cp -a "$build/$lib" "$pkg/lib/"
     done
@@ -76,14 +76,12 @@ else
 fi
 
 echo ""
-echo "=== ARM Cortex-M4 (bare-metal) ==="
+echo "=== ARM bare-metal (hard float) ==="
 if command -v "${BARE_ARM_PREFIX}g++" >/dev/null 2>&1; then
-    build_package arm-cortex-m4 "libyaqle" "libyaqle.a" \
+    build_package arm-none-eabi-hard "libyaqle" "libyaqle.a" \
         -DCMAKE_SYSTEM_NAME=Generic \
         -DCMAKE_SYSTEM_PROCESSOR=arm \
-        -DCMAKE_C_COMPILER="${BARE_ARM_PREFIX}gcc" \
         -DCMAKE_CXX_COMPILER="${BARE_ARM_PREFIX}g++" \
-        -DCMAKE_C_FLAGS="$CORTEX_M4_FLAGS" \
         -DCMAKE_CXX_FLAGS="$CORTEX_M4_FLAGS" \
         -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY
 else
