@@ -2,20 +2,14 @@
 FetchContent_Declare(
     googletest
     GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG v1.13.0
+    GIT_TAG v1.18.0
 )
 
 # Testing
 enable_testing()
 
-if(NOT googletest_POPULATED)
-    message(STATUS "Fetching Google Test ${googletest_VERSION}")
-
-    # FetchContent_MakeAvailable(etl)
-    FetchContent_Populate(googletest)
-
-    add_subdirectory(${googletest_SOURCE_DIR} EXCLUDE_FROM_ALL)
-endif()
+message(STATUS "Fetching Google Test")
+FetchContent_MakeAvailable(googletest)
 
 set(TEST_SOURCES
     ${CMAKE_SOURCE_DIR}/tests/yaqle_tests.cpp
