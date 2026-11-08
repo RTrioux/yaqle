@@ -8,6 +8,18 @@ Functions are hardcoded as much as possible on purpose in order to improve perfo
 
 yaql also provide a `Vector3D` class with overloaded arithmetic operators that you may use to apply rotation on.
 
+## Setup with tests
+
+Run:
+
+```
+cmake .. -DYAQLE_BUILD_TESTS=1 -DYAQLE_USE_COUT=1 
+./bin/tests
+```
+
+By default cout is not authorized for embedded targets so it needs to be enabled with 'YAQLE_USE_COUT'.
+
+
 ## Create a quaternion
 One can simply instantiate quaternions.
 
@@ -123,8 +135,6 @@ The sequence can be selected through the `Sequence` enum in `Quat` class.
 ```
 # TODOs
 
-- Make ETL version of this library to be able to use it from a microcontroler (Planned on STM32)
-- Add conversion to/from rotation matrix
 - Create a class 'Rotation', that wrap the whole thing, so that one can set its preferred settings during object instantiation (units/sequences/convention...) 
 
 

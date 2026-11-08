@@ -35,7 +35,7 @@ class Quat
     Quat(float arr[4]);
     Quat(float q0, Vector3D im);
     Quat(etl::array<float, 4> arr);
-    virtual ~Quat()
+    ~Quat() // No virtual destructor because it's never used here and it cost memory in embedded target
     {
     }
 

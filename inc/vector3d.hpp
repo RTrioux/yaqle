@@ -15,7 +15,7 @@ class Vector3D
     Vector3D(etl::array<float, 3> arr);
     Vector3D(float x = 0, float y = 0, float z = 0);
     Vector3D(float arr[3]);
-    virtual ~Vector3D()
+    ~Vector3D()
     {
     }
 

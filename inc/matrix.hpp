@@ -49,6 +49,10 @@ template <size_t rows, size_t cols> class Matrix
         }
     }
 
+    ~Matrix()
+    {
+    }
+
     static Matrix IdentityMatrix();
 
     float &operator()(size_t row, size_t col)

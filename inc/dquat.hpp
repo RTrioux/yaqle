@@ -1,7 +1,7 @@
 #ifndef DQUAT_HPP
 #define DQUAT_HPP
 #include "quat.hpp"
-#include <stdexcept>
+#include <etl/static_assert.h>
 
 namespace yaqle
 {
@@ -16,7 +16,7 @@ class DQuat
     DQuat(etl::array<float, 4> hRe, etl::array<float, 4> hIm);
     DQuat(float w0, float x0, float y0, float z0, float w1, float x1, float y1, float z1); // Usefull for gtest
 
-    virtual ~DQuat()
+    ~DQuat()
     {
     }
 
@@ -115,55 +115,36 @@ DQuat slerp(const DQuat &dq0, const DQuat &dq1, float t);
 
 template <typename T> DQuat operator/(DQuat const &dq, T const &scalar)
 {
-    if (etl::is_arithmetic<T>::value)
+    ETL_STATIC_ASSERT(etl::is_arithmetic<T>::value, "Not a scalar");
+    float arr[8];
+    for (size_t i = 0; i < 8; i++)
     {
-        float arr[8];
-        for (size_t i = 0; i < 8; i++)
-        {
-            arr[i] = dq[i] / scalar;
-        }
-        return DQuat(arr);
+        arr[i] = dq[i] / scalar;
     }
-    else
-    {
-        throw std::logic_error("Not a scalar");
-    }
+    return DQuat(arr);
 }
 
 template <typename T> DQuat operator/(T const &scalar, DQuat const &dq)
 {
-
-    if (etl::is_arithmetic<T>::value)
+    ETL_STATIC_ASSERT(etl::is_arithmetic<T>::value, "Not a scalar");
+    float arr[8];
+    DQuat dq_inv = dq.inverse();
+    for (size_t i = 0; i < 8; i++)
     {
-        float arr[8];
-        DQuat dq_inv = dq.inverse();
-        for (size_t i = 0; i < 8; i++)
-        {
-            arr[i] = scalar * dq_inv[i];
-        }
-        return DQuat(arr);
+        arr[i] = scalar * dq_inv[i];
     }
-    else
-    {
-        throw std::logic_error("Not a scalar");
-    }
+    return DQuat(arr);
 }
 
 template <typename T> DQuat operator*(T const &scalar, DQuat const &dq)
 {
-    if (etl::is_arithmetic<T>::value)
+    ETL_STATIC_ASSERT(etl::is_arithmetic<T>::value, "Not a scalar");
+    float arr[8] = {0};
+    for (size_t i = 0; i < 8; i++)
     {
-        float arr[8] = {0};
-        for (size_t i = 0; i < 8; i++)
-        {
-            arr[i] = scalar * dq[i];
-        }
-        return DQuat(arr);
+        arr[i] = scalar * dq[i];
     }
-    else
-    {
-        throw std::logic_error("Not a scalar");
-    }
+    return DQuat(arr);
 }
 
 template <typename T> DQuat operator*(DQuat const &dq, T const &scalar)
