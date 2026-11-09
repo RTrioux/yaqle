@@ -21,9 +21,9 @@ set(TEST_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/vector3d.cpp
 )
 add_executable(tests EXCLUDE_FROM_ALL ${TEST_SOURCES})
-target_link_libraries(tests PRIVATE gtest gtest_main)
+target_link_libraries(tests PRIVATE gtest gtest_main etl::etl)
 target_include_directories(tests PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-target_include_directories(tests PUBLIC ${PROJECT_SOURCE_DIR}/inc)
+target_include_directories(tests PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 
 target_compile_definitions(tests PUBLIC YAQLE_USE_COUT=1)

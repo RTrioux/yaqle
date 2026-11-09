@@ -1,5 +1,9 @@
 #include "quat.hpp"
+#include <array>
+#include <cmath>
 #include <gtest/gtest.h>
+#include <string>
+#include <vector>
 
 using namespace yaqle;
 
@@ -275,6 +279,301 @@ TEST_F(QuaternionTest, toEulerXYZ)
     EXPECT_NEAR(euler[0], M_PI / 2, 1e-5); // Roll
     EXPECT_NEAR(euler[1], 0.0, 1e-5);      // Pitch
     EXPECT_NEAR(euler[2], 0.0, 1e-5);      // Yaw
+}
+
+/* Euler conventions (intrinsic / extrinsic) */
+
+namespace
+{
+struct SeqInfo
+{
+    Quat::Sequence seq;
+    const char *name;
+};
+
+const SeqInfo ALL_SEQUENCES[12] = {{Quat::XYX, "XYX"}, {Quat::XYZ, "XYZ"}, {Quat::XZX, "XZX"}, {Quat::XZY, "XZY"},
+                                   {Quat::YXY, "YXY"}, {Quat::YXZ, "YXZ"}, {Quat::YZX, "YZX"}, {Quat::YZY, "YZY"},
+                                   {Quat::ZXY, "ZXY"}, {Quat::ZXZ, "ZXZ"}, {Quat::ZYX, "ZYX"}, {Quat::ZYZ, "ZYZ"}};
+
+// Independent from the library: look the reversed name up (XYZ -> ZYX)
+Quat::Sequence reverseSequence(const char *name)
+{
+    char rev[4] = {name[2], name[1], name[0], '\0'};
+    for (const SeqInfo &info : ALL_SEQUENCES)
+    {
+        if (std::string(info.name) == rev)
+            return info.seq;
+    }
+    return Quat::XYZ;
+}
+
+bool isProperEuler(const char *name)
+{
+    return name[0] == name[2];
+}
+
+// q and -q are the same rotation
+bool sameRotation(const Quat &q1, const Quat &q2, double tolerance = 1e-5)
+{
+    return compareQuat(q1, q2, tolerance) || compareQuat(q1, -q2, tolerance);
+}
+
+using Mat3 = std::array<std::array<float, 3>, 3>;
+
+Mat3 elementaryMatrix(char axis, float angle)
+{
+    const float c = cosf(angle), s = sinf(angle);
+    switch (axis)
+    {
+    case 'X':
+        return {{{1, 0, 0}, {0, c, -s}, {0, s, c}}};
+    case 'Y':
+        return {{{c, 0, s}, {0, 1, 0}, {-s, 0, c}}};
+    default:
+        return {{{c, -s, 0}, {s, c, 0}, {0, 0, 1}}};
+    }
+}
+
+Mat3 multiply(const Mat3 &A, const Mat3 &B)
+{
+    Mat3 C = {};
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++)
+            for (int k = 0; k < 3; k++)
+                C[i][j] += A[i][k] * B[k][j];
+    return C;
+}
+
+// Reference rotation matrix built from the definition of each convention
+Mat3 referenceMatrix(const char *name, const float angles[3], bool isExtrinsic)
+{
+    Mat3 R1 = elementaryMatrix(name[0], angles[0]);
+    Mat3 R2 = elementaryMatrix(name[1], angles[1]);
+    Mat3 R3 = elementaryMatrix(name[2], angles[2]);
+    // Intrinsic: R = R1.R2.R3 / Extrinsic: the first rotation is applied first: R = R3.R2.R1
+    return isExtrinsic ? multiply(multiply(R3, R2), R1) : multiply(multiply(R1, R2), R3);
+}
+
+// Generic angles (no gimbal lock) valid for both Tait-Bryan and proper Euler sequences
+const float GENERIC_ANGLES[4][3] = {{0.4f, 0.7f, -0.9f}, {-1.2f, 0.3f, 2.5f}, {2.9f, 1.1f, 0.2f}, {-0.1f, 1.4f, -2.8f}};
+} // namespace
+
+TEST_F(QuaternionTest, extrinsicIsReversedIntrinsic)
+{
+    // Extrinsic ABC (a,b,c) <=> Intrinsic CBA (c,b,a), and conversely
+    for (const SeqInfo &info : ALL_SEQUENCES)
+    {
+        const Quat::Sequence rev = reverseSequence(info.name);
+        for (const auto &ang : GENERIC_ANGLES)
+        {
+            SCOPED_TRACE(std::string(info.name) + " / " + std::to_string(ang[0]) + " " + std::to_string(ang[1]) + " " +
+                         std::to_string(ang[2]));
+
+            Quat qExt = fromEuler(ang[0], ang[1], ang[2], info.seq, false, true);
+            Quat qIntRev = fromEuler(ang[2], ang[1], ang[0], rev, false, false);
+            EXPECT_TRUE(compareQuat(qExt, qIntRev, 1e-6));
+
+            Quat qInt = fromEuler(ang[0], ang[1], ang[2], info.seq, false, false);
+            Quat qExtRev = fromEuler(ang[2], ang[1], ang[0], rev, false, true);
+            EXPECT_TRUE(compareQuat(qInt, qExtRev, 1e-6));
+        }
+    }
+}
+
+TEST_F(QuaternionTest, extrinsicIsReversedIntrinsicDegrees)
+{
+    for (const SeqInfo &info : ALL_SEQUENCES)
+    {
+        SCOPED_TRACE(info.name);
+        Quat qExt = fromEuler(30, 50, 70, info.seq, true, true);
+        Quat qIntRev = fromEuler(70, 50, 30, reverseSequence(info.name), true, false);
+        EXPECT_TRUE(compareQuat(qExt, qIntRev, 1e-6));
+    }
+}
+
+TEST_F(QuaternionTest, toEulerExtrinsicIsReversedIntrinsic)
+{
+    for (const SeqInfo &info : ALL_SEQUENCES)
+    {
+        const Quat::Sequence rev = reverseSequence(info.name);
+        for (const auto &ang : GENERIC_ANGLES)
+        {
+            SCOPED_TRACE(info.name);
+            Quat q = fromEuler(ang[0], ang[1], ang[2], info.seq, false, false);
+            Vector3D ext = q.toEuler(info.seq, false, true);
+            Vector3D intRev = q.toEuler(rev, false, false);
+            // Extrinsic ABC (a,b,c) <=> Intrinsic CBA (c,b,a)
+            EXPECT_NEAR(ext[0], intRev[2], 1e-5);
+            EXPECT_NEAR(ext[1], intRev[1], 1e-5);
+            EXPECT_NEAR(ext[2], intRev[0], 1e-5);
+        }
+    }
+}
+
+TEST_F(QuaternionTest, fromEulerMatchesReferenceMatrix)
+{
+    for (const SeqInfo &info : ALL_SEQUENCES)
+    {
+        for (bool isExtrinsic : {false, true})
+        {
+            for (const auto &ang : GENERIC_ANGLES)
+            {
+                SCOPED_TRACE(std::string(info.name) + (isExtrinsic ? " extrinsic" : " intrinsic"));
+                Quat q = fromEuler(ang[0], ang[1], ang[2], info.seq, false, isExtrinsic);
+                Mat3 Rref = referenceMatrix(info.name, ang, isExtrinsic);
+                Matrix<3, 3> R = q.toRotationMatrix(info.seq, isExtrinsic);
+                for (size_t i = 0; i < 3; i++)
+                    for (size_t j = 0; j < 3; j++)
+                        EXPECT_NEAR(R(i, j), Rref[i][j], 1e-5) << "at (" << i << "," << j << ")";
+            }
+        }
+    }
+}
+
+TEST_F(QuaternionTest, toEulerFromEulerRoundTrip)
+{
+    for (const SeqInfo &info : ALL_SEQUENCES)
+    {
+        for (bool isExtrinsic : {false, true})
+        {
+            for (const auto &ang : GENERIC_ANGLES)
+            {
+                // Tait-Bryan middle angle is in [-pi/2, pi/2], proper Euler one in [0, pi]
+                if (!isProperEuler(info.name) && std::abs(ang[1]) > M_PI_2)
+                    continue;
+                SCOPED_TRACE(std::string(info.name) + (isExtrinsic ? " extrinsic" : " intrinsic"));
+
+                Quat q = fromEuler(ang[0], ang[1], ang[2], info.seq, false, isExtrinsic);
+                Vector3D euler = q.toEuler(info.seq, false, isExtrinsic);
+                EXPECT_TRUE(sameRotation(q, fromEuler(euler, info.seq, false, isExtrinsic)));
+                EXPECT_NEAR(euler[1], ang[1], 1e-4);
+            }
+        }
+    }
+}
+
+TEST_F(QuaternionTest, toEulerReturnsOriginalAngles)
+{
+    // Middle angle in the principal range for both families: no ambiguity
+    const float ang[3] = {0.4f, 0.7f, -0.9f};
+    for (const SeqInfo &info : ALL_SEQUENCES)
+    {
+        for (bool isExtrinsic : {false, true})
+        {
+            SCOPED_TRACE(std::string(info.name) + (isExtrinsic ? " extrinsic" : " intrinsic"));
+            Quat q = fromEuler(ang[0], ang[1], ang[2], info.seq, false, isExtrinsic);
+            Vector3D euler = q.toEuler(info.seq, false, isExtrinsic);
+            EXPECT_NEAR(euler[0], ang[0], 1e-4);
+            EXPECT_NEAR(euler[1], ang[1], 1e-4);
+            EXPECT_NEAR(euler[2], ang[2], 1e-4);
+        }
+    }
+}
+
+TEST_F(QuaternionTest, toEulerDegrees)
+{
+    for (const SeqInfo &info : ALL_SEQUENCES)
+    {
+        for (bool isExtrinsic : {false, true})
+        {
+            SCOPED_TRACE(std::string(info.name) + (isExtrinsic ? " extrinsic" : " intrinsic"));
+            Quat q = fromEuler(20, 40, -60, info.seq, true, isExtrinsic);
+            Vector3D euler = q.toEuler(info.seq, true, isExtrinsic);
+            EXPECT_NEAR(euler[0], 20, 1e-2);
+            EXPECT_NEAR(euler[1], 40, 1e-2);
+            EXPECT_NEAR(euler[2], -60, 1e-2);
+        }
+    }
+}
+
+TEST_F(QuaternionTest, toEulerGimbalLock)
+{
+    for (const SeqInfo &info : ALL_SEQUENCES)
+    {
+        // Tait-Bryan: beta = +/-pi/2, proper Euler: beta = 0 or pi
+        std::vector<float> betas;
+        if (isProperEuler(info.name))
+            betas = {0.0f, (float)M_PI};
+        else
+            betas = {(float)M_PI_2, -(float)M_PI_2};
+
+        for (bool isExtrinsic : {false, true})
+        {
+            for (float beta : betas)
+            {
+                for (const auto &ang : GENERIC_ANGLES)
+                {
+                    SCOPED_TRACE(std::string(info.name) + (isExtrinsic ? " extrinsic" : " intrinsic") +
+                                 " beta=" + std::to_string(beta));
+                    Quat q = fromEuler(ang[0], beta, ang[2], info.seq, false, isExtrinsic);
+                    Vector3D euler = q.toEuler(info.seq, false, isExtrinsic);
+
+                    EXPECT_FALSE(std::isnan(euler[0]) || std::isnan(euler[1]) || std::isnan(euler[2]));
+                    // The third angle is set to 0 and the rotation is preserved
+                    EXPECT_NEAR(euler[2], 0.0, 1e-5);
+                    EXPECT_TRUE(sameRotation(q, fromEuler(euler, info.seq, false, isExtrinsic), 1e-4));
+                }
+            }
+        }
+    }
+}
+
+TEST_F(QuaternionTest, toEulerSlightlyOutOfRangeDoesNotProduceNaN)
+{
+    // Rounding errors can push a rotation matrix coefficient slightly above 1
+    for (const SeqInfo &info : ALL_SEQUENCES)
+    {
+        for (bool isExtrinsic : {false, true})
+        {
+            Quat q = fromEuler(0.3f, (float)M_PI_2, 0.5f, info.seq, false, isExtrinsic);
+            Vector3D euler = q.toEuler(info.seq, false, isExtrinsic);
+            EXPECT_FALSE(std::isnan(euler[0]) || std::isnan(euler[1]) || std::isnan(euler[2])) << info.name;
+        }
+    }
+}
+
+TEST_F(QuaternionTest, rotationMatrixIndependentOfSequence)
+{
+    Quat q = fromAxisAngle(0.8f, 1, 2, 3, true);
+    Matrix<3, 3> ref = q.toRotationMatrix();
+    for (const SeqInfo &info : ALL_SEQUENCES)
+    {
+        for (bool isExtrinsic : {false, true})
+        {
+            Matrix<3, 3> R = q.toRotationMatrix(info.seq, isExtrinsic);
+            for (size_t i = 0; i < 3; i++)
+                for (size_t j = 0; j < 3; j++)
+                    EXPECT_NEAR(R(i, j), ref(i, j), 1e-6);
+        }
+    }
+
+    // Columns of the matrix are the images of the basis vectors
+    Vector3D ex = q.rotate(Vector3D(1, 0, 0));
+    EXPECT_NEAR(ref(0, 0), ex[0], 1e-5);
+    EXPECT_NEAR(ref(1, 0), ex[1], 1e-5);
+    EXPECT_NEAR(ref(2, 0), ex[2], 1e-5);
+}
+
+TEST_F(QuaternionTest, intrinsicVsExtrinsicKnownRotation)
+{
+    // XYZ with (90, 0, 90) degrees
+    Quat qInt = fromEuler(90, 0, 90, Quat::XYZ, true, false);
+    Quat qExt = fromEuler(90, 0, 90, Quat::XYZ, true, true);
+
+    // Intrinsic: R = Rx(90).Rz(90) -> ex goes to ez
+    Vector3D vInt = qInt.rotate(Vector3D(1, 0, 0));
+    EXPECT_NEAR(vInt[0], 0.0, 1e-5);
+    EXPECT_NEAR(vInt[1], 0.0, 1e-5);
+    EXPECT_NEAR(vInt[2], 1.0, 1e-5);
+
+    // Extrinsic: first X0 then Z0, R = Rz(90).Rx(90) -> ex goes to ey
+    Vector3D vExt = qExt.rotate(Vector3D(1, 0, 0));
+    EXPECT_NEAR(vExt[0], 0.0, 1e-5);
+    EXPECT_NEAR(vExt[1], 1.0, 1e-5);
+    EXPECT_NEAR(vExt[2], 0.0, 1e-5);
+
+    // Extrinsic XYZ == intrinsic ZYX with reversed angles
+    EXPECT_TRUE(compareQuat(qExt, fromEuler(90, 0, 90, Quat::ZYX, true, false), 1e-6));
 }
 
 /* Spatial rotation tests */

@@ -14,7 +14,7 @@
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-VERSION="${1:-1.0.2}"
+VERSION="${1:-1.0.3}"
 BUILD_DIR="$PROJECT_ROOT/build-release"
 ARTIFACTS_DIR="$PROJECT_ROOT/release-artifacts"
 CORTEX_M4_FLAGS="-mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard"

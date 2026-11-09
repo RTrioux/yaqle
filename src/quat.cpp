@@ -250,6 +250,21 @@ Vector3D Quat::rotate(float arr[3]) const
 
 /** Conversions **/
 
+namespace
+{
+// Axes of each Quat::Sequence, indexed by the enum value
+const char *const SEQ_AXES[12] = {"XYX", "XYZ", "XZX", "XZY", "YXY", "YXZ", "YZX", "YZY", "ZXY", "ZXZ", "ZYX", "ZYZ"};
+
+// Sequence with reversed axes (e.g. XYZ -> ZYX), indexed by the enum value
+const Quat::Sequence SEQ_REVERSED[12] = {Quat::XYX, Quat::ZYX, Quat::XZX, Quat::YZX, Quat::YXY, Quat::ZXY,
+                                         Quat::XZY, Quat::YZY, Quat::YXZ, Quat::ZXZ, Quat::XYZ, Quat::ZYZ};
+
+float clampUnit(float x)
+{
+    return x > 1.0f ? 1.0f : (x < -1.0f ? -1.0f : x);
+}
+} // namespace
+
 Vector3D Quat::toEuler(Sequence seq, bool degree, bool isExtrinsic) const
 {
     /**
@@ -262,14 +277,17 @@ Vector3D Quat::toEuler(Sequence seq, bool degree, bool isExtrinsic) const
      * Solution can also be found here :
      * https://ntrs.nasa.gov/api/citations/19770024290/downloads/19770024290.pdf
      *
-     * IMPORTANT: The intrinsic convention is used to compute the rotation matrices
-     *            (See: https://www.wikiwand.com/en/Davenport_chained_rotations#)
+     * The equations are solved in the intrinsic convention (R = R_1.R_2.R_3).
+     * (See: https://www.wikiwand.com/en/Davenport_chained_rotations#)
+     * An extrinsic sequence ABC with angles (a,b,c) is the intrinsic sequence CBA with angles (c,b,a)
+     * so for extrinsic we solve the reversed sequence and then reverse the angles.
      **/
 
-    static map<Sequence, string<4>, 12> seq2str = {{XYX, "XYX"}, {XYZ, "XYZ"}, {XZX, "XZX"}, {XZY, "XZY"},
-                                                   {YXY, "YXY"}, {YXZ, "YXZ"}, {YZX, "YZX"}, {YZY, "YZY"},
-                                                   {ZXY, "ZXY"}, {ZXZ, "ZXZ"}, {ZYX, "ZYX"}, {ZYZ, "ZYZ"}};
-    string<4> strSeq = seq2str[seq];
+    if (isExtrinsic)
+    {
+        seq = SEQ_REVERSED[seq];
+    }
+    const char *strSeq = SEQ_AXES[seq];
 
     YAQLE_QUAT_MAYBE_NORMALIZE(Q);
 
@@ -280,7 +298,10 @@ Vector3D Quat::toEuler(Sequence seq, bool degree, bool isExtrinsic) const
     float a = 1 - 2 * (q2 * q2 + q3 * q3), b = 2 * (q1 * q2 - q3 * q0), c = 2 * (q1 * q3 + q2 * q0),
           d = 2 * (q1 * q2 + q3 * q0), e = 1 - 2 * (q1 * q1 + q3 * q3), f = 2 * (q2 * q3 - q1 * q0),
           g = 2 * (q1 * q3 - q2 * q0), h = 2 * (q2 * q3 + q1 * q0), i = 1 - 2 * (q1 * q1 + q2 * q2);
+    const float R[3][3] = {{a, b, c}, {d, e, f}, {g, h, i}};
     Vector3D euler;
+    // Matrix coefficient giving the middle angle (sin(beta) for Tait-Bryan, cos(beta) for proper Euler)
+    float mid = 0;
 
     // By identification from R_q and R_xxx
     // You can easily find for each combinaison a solution for each angle
@@ -288,97 +309,104 @@ Vector3D Quat::toEuler(Sequence seq, bool degree, bool isExtrinsic) const
     switch (seq)
     {
     case XYX:
+        mid = clampUnit(a);
         euler[0] = atan2f(d, -g);
-        euler[1] = acosf(a);
+        euler[1] = acosf(mid);
         euler[2] = atan2f(b, c);
         break;
     case XYZ:
+        mid = clampUnit(c);
         euler[0] = atan2f(-f, i);
-        euler[1] = asinf(c);
+        euler[1] = asinf(mid);
         euler[2] = atan2f(-b, a);
         break;
     case XZX:
+        mid = clampUnit(a);
         euler[0] = atan2f(g, d);
-        euler[1] = acosf(a);
+        euler[1] = acosf(mid);
         euler[2] = atan2f(c, -b);
         break;
     case XZY:
+        mid = clampUnit(-b);
         euler[0] = atan2f(h, e);
-        euler[1] = -asinf(b);
+        euler[1] = asinf(mid);
         euler[2] = atan2f(c, a);
         break;
     case YXY:
+        mid = clampUnit(e);
         euler[0] = atan2f(b, h);
-        euler[1] = acosf(e);
+        euler[1] = acosf(mid);
         euler[2] = atan2f(d, -f);
         break;
     case YXZ:
+        mid = clampUnit(-f);
         euler[0] = atan2f(c, i);
-        euler[1] = -asinf(f);
+        euler[1] = asinf(mid);
         euler[2] = atan2f(d, e);
         break;
     case YZX:
+        mid = clampUnit(d);
         euler[0] = atan2f(-g, a);
-        euler[1] = asinf(d);
+        euler[1] = asinf(mid);
         euler[2] = atan2f(-f, e);
         break;
     case YZY:
+        mid = clampUnit(e);
         euler[0] = atan2f(h, -b);
-        euler[1] = acosf(e);
+        euler[1] = acosf(mid);
         euler[2] = atan2f(f, d);
         break;
     case ZXY:
+        mid = clampUnit(h);
         euler[0] = atan2f(-b, e);
-        euler[1] = asinf(h);
+        euler[1] = asinf(mid);
         euler[2] = atan2f(-g, i);
         break;
     case ZXZ:
+        mid = clampUnit(i);
         euler[0] = atan2f(c, -f);
-        euler[1] = acosf(i);
+        euler[1] = acosf(mid);
         euler[2] = atan2f(g, h);
         break;
     case ZYX:
+        mid = clampUnit(-g);
         euler[0] = atan2f(d, a);
-        euler[1] = -asinf(g);
+        euler[1] = asinf(mid);
         euler[2] = atan2f(h, i);
         break;
     case ZYZ:
+        mid = clampUnit(i);
         euler[0] = atan2f(f, c);
-        euler[1] = acosf(i);
+        euler[1] = acosf(mid);
         euler[2] = atan2f(h, -g);
         break;
     default:
-        // TODO: Check sequence order
+        euler = Vector3D(0, 0, 0);
         break;
     }
 
     /* Gimbal lock check */
 
-    if (abs(euler[1]) < YAQLE_EPS || abs(euler[1] - M_PI) < YAQLE_EPS)
+    // Tait-Bryan (e.g. XYZ): locked when |sin(beta)| = 1, proper Euler (e.g. XYX): locked when |cos(beta)| = 1
+    if (fabsf(mid) > 1.0f - YAQLE_EPS)
     {
-        // Ensure that the third angle is 0 after swapping 0 & 2
+        // Only alpha + gamma (or alpha - gamma) is observable: the last returned angle is set to 0.
+        // For extrinsic the returned angles are reversed so the last returned angle is the intrinsic alpha.
+        const int ax1 = strSeq[0] - 'X', ax2 = strSeq[1] - 'X', ax3 = strSeq[2] - 'X';
         if (isExtrinsic)
         {
-            if (strSeq[0] != 'Y')
-            {
-                euler[2] = acosf(e);
-            }
-            else
-            {
-                euler[2] = acosf(a);
-            }
+            // alpha = 0 so R = R_2(beta).R_3(gamma) and R^T.e_ax2 = R_3(-gamma).e_ax2
+            const int k = 3 - ax2 - ax3;
+            const float sign = ((ax2 - ax3 + 3) % 3 == 1) ? 1.0f : -1.0f;
             euler[0] = 0;
+            euler[2] = atan2f(-sign * R[ax2][k], R[ax2][ax2]);
         }
         else
         {
-            if (strSeq[0] != 'Y')
-            {
-                euler[0] = acosf(e);
-            }
-            else
-            {
-                euler[0] = acosf(a);
-            }
+            // gamma = 0 so R = R_1(alpha).R_2(beta) and R.e_ax2 = R_1(alpha).e_ax2
+            const int k = 3 - ax1 - ax2;
+            const float sign = ((ax2 - ax1 + 3) % 3 == 1) ? 1.0f : -1.0f;
+            euler[0] = atan2f(sign * R[k][ax2], R[ax2][ax2]);
             euler[2] = 0;
         }
 #ifdef YAQLE_USE_COUT
@@ -403,46 +431,15 @@ Vector3D Quat::toEuler(Sequence seq, bool degree, bool isExtrinsic) const
     return euler;
 }
 
-Matrix<3, 3> Quat::toRotationMatrix(Sequence seq, bool isExtrinsic) const
+Matrix<3, 3> Quat::toRotationMatrix(Sequence, bool) const
 {
-    // TODO: CHECK IF IT'S VALID
+    // The rotation matrix only depends on the rotation itself, not on the Euler sequence or convention
+    YAQLE_QUAT_MAYBE_NORMALIZE(Q);
 
-    static map<Sequence, string<4>, 12> seq2str = {{XYX, "XYX"}, {XYZ, "XYZ"}, {XZX, "XZX"}, {XZY, "XZY"},
-                                                   {YXY, "YXY"}, {YXZ, "YXZ"}, {YZX, "YZX"}, {YZY, "YZY"},
-                                                   {ZXY, "ZXY"}, {ZXZ, "ZXZ"}, {ZYX, "ZYX"}, {ZYZ, "ZYZ"}};
-    string<4> strSeq = seq2str[seq];
-
-    Vector3D euler = toEuler(seq, false, isExtrinsic);
-
-    Matrix<3, 3> R = Matrix<3, 3>::IdentityMatrix();
-    for (size_t i = 0; i < 3; i++)
-    {
-        // R = R_1.R_2.R_3 IS intrinsic but when building it recursively you need to inverse order !
-        // Step 1: R = 1 * R1
-        // Step 2: R = R1 * R2
-        // Step 3: R = R1 * R2 * R3
-        // Therefore R = R * R_x
-        if (strSeq[i] == 'X')
-        {
-            Matrix<3, 3> R_x = {{1, 0, 0}, {0, cosf(euler[i]), -sinf(euler[i])}, {0, sinf(euler[i]), cosf(euler[i])}};
-            R = R * R_x;
-        }
-        else if (strSeq[i] == 'Y')
-        {
-            // R = R * R_y
-            Matrix<3, 3> R_y = {{cosf(euler[i]), 0, sinf(euler[i])}, {0, 1, 0}, {-sinf(euler[i]), 0, cosf(euler[i])}};
-            R = R * R_y;
-        }
-        else if (strSeq[i] == 'Z')
-        {
-            // R = R * R_z
-            Matrix<3, 3> R_z = {{cosf(euler[i]), -sinf(euler[i]), 0}, {sinf(euler[i]), cosf(euler[i]), 0}, {0, 0, 1}};
-            R = R * R_z;
-        }
-    }
-
-    // Combine the rotation matrices
-    return R;
+    float q0 = Q[0], q1 = Q[1], q2 = Q[2], q3 = Q[3];
+    return Matrix<3, 3>{{1 - 2 * (q2 * q2 + q3 * q3), 2 * (q1 * q2 - q3 * q0), 2 * (q1 * q3 + q2 * q0)},
+                        {2 * (q1 * q2 + q3 * q0), 1 - 2 * (q1 * q1 + q3 * q3), 2 * (q2 * q3 - q1 * q0)},
+                        {2 * (q1 * q3 - q2 * q0), 2 * (q2 * q3 + q1 * q0), 1 - 2 * (q1 * q1 + q2 * q2)}};
 }
 
 /** Display **/
@@ -533,13 +530,17 @@ Quat fromEuler(etl::array<float, 3> euler, Quat::Sequence seq, bool degree, bool
 {
     /**
      * https://handwiki.org/wiki/Rotation_formalisms_in_three_dimensions
+     * Intrinsic: Q = Q_1(alpha).Q_2(beta).Q_3(gamma)
+     * Extrinsic sequence ABC with angles (a,b,c) is the intrinsic sequence CBA with angles (c,b,a)
      **/
-    static map<Quat::Sequence, string<4>, 12> seq2str = {{Quat::XYX, "XYX"}, {Quat::XYZ, "XYZ"}, {Quat::XZX, "XZX"},
-                                                         {Quat::XZY, "XZY"}, {Quat::YXY, "YXY"}, {Quat::YXZ, "YXZ"},
-                                                         {Quat::YZX, "YZX"}, {Quat::YZY, "YZY"}, {Quat::ZXY, "ZXY"},
-                                                         {Quat::ZXZ, "ZXZ"}, {Quat::ZYX, "ZYX"}, {Quat::ZYZ, "ZYZ"}};
-
-    string<4> strSeq = seq2str[seq];
+    if (isExtrinsic)
+    {
+        seq = SEQ_REVERSED[seq];
+        float temp = euler[0];
+        euler[0] = euler[2];
+        euler[2] = temp;
+    }
+    const char *strSeq = SEQ_AXES[seq];
 
     if (degree)
     {
@@ -549,34 +550,22 @@ Quat fromEuler(etl::array<float, 3> euler, Quat::Sequence seq, bool degree, bool
         }
     }
 
-    if (isExtrinsic)
-    {
-        // Normally you need to invert matrix multiplication order but inverting angles is equivalent
-        float temp = euler[0];
-        euler[0] = euler[2];
-        euler[2] = temp;
-    }
-
-    Quat Q[3];
     Quat Qresult = Quat(1, 0, 0, 0);
-    int i = 0;
-    for (char c : strSeq)
+    for (int n = 0; n < 3; n++)
     {
-        switch (c)
+        const float half = euler[n] / 2;
+        switch (strSeq[n])
         {
         case 'X':
-            Q[i] = Quat(cosf(euler[i] / 2), sinf(euler[i] / 2), 0, 0);
+            Qresult = Qresult * Quat(cosf(half), sinf(half), 0, 0);
             break;
         case 'Y':
-            Q[i] = Quat(cosf(euler[i] / 2), 0, sinf(euler[i] / 2), 0);
+            Qresult = Qresult * Quat(cosf(half), 0, sinf(half), 0);
             break;
         case 'Z':
-            Q[i] = Quat(cosf(euler[i] / 2), 0, 0, sinf(euler[i] / 2));
+            Qresult = Qresult * Quat(cosf(half), 0, 0, sinf(half));
             break;
         }
-        // eq to Q_1.Q_2.Q_3 i.e Intrinsic convention, for extrinsic the order is inverted above
-        Qresult = Qresult * Q[i];
-        i++;
     }
 
     return Qresult;

@@ -40,13 +40,17 @@ class Quat
     }
 
     /** Rotation sequences:
-     *  In intrinsic convention (default), it rotates around a new base intermediate base every time
+     *  In intrinsic convention (default), it rotates around a new intermediate base every time
      *  XYZ means first rotate around X0 then Y1 then Z2.
      *  where B0 is the world (static base), B1 the first relative base and B2 the final base.
+     *  Equivalent to R = R_x(a).R_y(b).R_z(c) and Q = Q_x(a).Q_y(b).Q_z(c)
      *
      * In extrinsic convention, the rotation is always done with respect to the static base B0.
-     * /!\ The rotation order is inversed /!\
-     * XYZ means first rotation around Z0, then around Y0 and finaly around X0.
+     * XYZ means first rotate around X0, then Y0 and finally around Z0.
+     * Equivalent to R = R_z(c).R_y(b).R_x(a).
+     *
+     * Extrinsic sequence ABC with angles (a,b,c) is the same rotation as
+     * intrinsic sequence CBA with angles (c,b,a).
      **/
     enum Sequence
     {
@@ -111,7 +115,8 @@ class Quat
     Vector3D toEuler(Sequence seq = ZYX, bool degree = false,
                      bool isExtrinsic = false) const; // YPR as default sequence
 
-    // Intrinsic Tait-Bryan (yaw, pitch, roll) angles as default sequence
+    // The rotation matrix does not depend on the Euler sequence/convention, the arguments are ignored
+    // and kept for backward compatibility.
     Matrix<3, 3> toRotationMatrix(Sequence seq = ZYX, bool isExtrinsic = false) const;
 
     /** Display **/
